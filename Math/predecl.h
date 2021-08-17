@@ -51,19 +51,20 @@ struct Math {
 	}
 
 	// 矢量转整数颜色
-	static uint32_t vec_to_color(const Vec4f& color) {
-		uint32_t r = (uint32_t)clamp(0, 255, (int)(color.r * 255.0f));
-		uint32_t g = (uint32_t)clamp(0, 255, (int)(color.g * 255.0f));
-		uint32_t b = (uint32_t)clamp(0, 255, (int)(color.b * 255.0f));
-		uint32_t a = (uint32_t)clamp(0, 255, (int)(color.a * 255.0f));
+	template<typename T>
+	static uint32_t vec_to_color(const Vec4<T>& color) {
+		uint32_t r = (uint32_t)clamp((int)(color.r * 255.0f), 0, 255);
+		uint32_t g = (uint32_t)clamp((int)(color.g * 255.0f), 0, 255);
+		uint32_t b = (uint32_t)clamp((int)(color.b * 255.0f), 0, 255);
+		uint32_t a = (uint32_t)clamp((int)(color.a * 255.0f), 0, 255);
 		return (r << 16) | (g << 8) | b | (a << 24);
 	}
 
 	// 矢量转换整数颜色
-	static uint32_t vec_to_color(const Vec3f& color) {
+	template<typename T>
+	static uint32_t vec_to_color(const Vec3<T>& color) {
 		return vec_to_color(color.to_vec4());
 	}
-
 
 };
 

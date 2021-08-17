@@ -26,7 +26,7 @@ private:
 	HDC screen_dc;			// ÅäÌ×µÄ HDC
 	HBITMAP screen_hb;		// DIB
 	HBITMAP screen_ob;		// ÀÏµÄ BITMAP
-	unsigned int* framebuffer;		// frame buffer
+	uint32_t* framebuffer;		// frame buffer
 
 };
 
