@@ -12,6 +12,9 @@
     <Filter Include="资源文件">
       <UniqueIdentifier>{85a76609-c245-4870-9d96-9ecf001a1511}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{3ed17922-028c-4d63-825f-34b0466dc16d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinMain.cpp">
@@ -67,6 +70,27 @@
     <ClInclude Include="ChiliWin.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Math\vec4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\vec2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\vec3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Math.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\predecl.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\mat4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\transform3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RenderLite.rc">
@@ -77,5 +101,22 @@
     <Image Include="favicon.ico">
       <Filter>资源文件</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Math\vec3.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="Math\vec4.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="Math\vec2.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="Math\mat4.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="Math\transform3.inl">
+      <Filter>Math</Filter>
+    </None>
   </ItemGroup>
 </Project>

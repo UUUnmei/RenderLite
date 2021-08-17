@@ -3,6 +3,7 @@
 #define	GRAPHICS_H
 
 #include "ChiliWin.h"
+#include "Math/Math.h"
 
 class Graphics {
 public:
