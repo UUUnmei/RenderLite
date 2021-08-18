@@ -1,4 +1,5 @@
 #include "predecl.h"
+#include "vec2.h"
 
 
 template<typename T>
@@ -8,6 +9,11 @@ inline Vec2<T>::Vec2() noexcept
 template<typename T>
 inline Vec2<T>::Vec2(T x, T y) noexcept
 	: x(x), y(y) { }
+
+template<typename T>
+inline Vec2<T>::Vec2(const std::pair<T, T>& t) noexcept
+	: x(t.first), y(t.second) { }
+
 
 template<typename T>
 inline Vec2<T>::Vec2(const Vec2<T>& t)  noexcept

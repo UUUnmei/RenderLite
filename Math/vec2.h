@@ -17,6 +17,7 @@ struct Vec2 {
 	// basic
 	Vec2() noexcept;
 	Vec2(T x, T y) noexcept;
+	Vec2(const std::pair<T, T>& t) noexcept;
 	explicit Vec2(const Vec2& t) noexcept;
 	Vec2<T>& operator=(const Vec2& t) noexcept;
 	~Vec2() = default;

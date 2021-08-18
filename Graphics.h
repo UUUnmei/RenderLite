@@ -12,10 +12,12 @@ public:
 	Graphics& operator=(const Graphics&) = delete;
 	~Graphics();
 
-	void set_pixel(int x, int y, unsigned int color);
-	void clear_buffer(unsigned int color);
+	void set_pixel(int x, int y, uint32_t color);
+	void set_pixel(int idx, uint32_t color);
+	void clear_buffer(uint32_t color);
 	void draw(void);
-	//void DrawTriangle(float angle);
+	void draw_line(const Vec2i& start, const Vec2i& end, uint32_t color);
+	//void DrawTriangle(void);
 	//void DrawCube(float angle, float x, float y);
 
 private:
