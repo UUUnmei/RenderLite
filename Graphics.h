@@ -17,7 +17,9 @@ public:
 	void clear_buffer(uint32_t color);
 	void draw(void);
 	void draw_line(const Vec2i& start, const Vec2i& end, uint32_t color);
-	//void DrawTriangle(void);
+	template<typename T>
+	void draw_line(const Vec3<T>& start, const Vec3<T>& end, uint32_t color);
+	void DrawTriangle(float angle);
 	//void DrawCube(float angle, float x, float y);
 
 private:

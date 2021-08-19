@@ -40,7 +40,7 @@ inline Mat4<T> Transform3::scale(T x, T y, T z)
 
 inline Mat4<float> Transform3::rotate_x(float rad)
 {
-	float c = std::sin(rad), s = std::cos(rad);
+	float c = std::cos(rad), s = std::sin(rad);
 	return Mat4<float>(
 		1, 0,  0, 0, 
 		0, c, -s, 0,
@@ -52,7 +52,7 @@ inline Mat4<float> Transform3::rotate_x(float rad)
 
 inline Mat4<float> Transform3::rotate_y(float rad)
 {
-	float c = std::sin(rad), s = std::cos(rad);
+	float c = std::cos(rad), s = std::sin(rad);
 	return Mat4<float>(
 		c,  0, s, 0,
 		0,  1, 0, 0,
@@ -63,7 +63,7 @@ inline Mat4<float> Transform3::rotate_y(float rad)
 
 inline Mat4<float> Transform3::rotate_z(float rad)
 {
-	float c = std::sin(rad), s = std::cos(rad);
+	float c = std::cos(rad), s = std::sin(rad);
 	return Mat4<float>(
 		c, -s, 0, 0,
 		s, c, 0, 0,
@@ -75,15 +75,14 @@ inline Mat4<float> Transform3::rotate_z(float rad)
 
 // Rodrigues' Rotation Formula
 // 这里直接写展开后的形式
-template<typename T>
-inline Mat4<float> Transform3::rotate(const Vec3<T>& axis, float rad)
+inline Mat4<float> Transform3::rotate(const Vec3<float>& axis, float rad)
 {
 	Mat4<float> ret;
-	const Vec3<T> k = axis.normalize();
+	const Vec3<float> k = axis.normalize();
 	const float s = std::sin(rad), c = std::cos(rad);
-	T x = k.x;
-	T y = k.y;
-	T z = k.z;
+	float x = k.x;
+	float y = k.y;
+	float z = k.z;
 
 	ret.cols[0][0] = x * x + (1 - x * x) * c;
 	ret.cols[0][1] = x * y * (1 - c) - z * s;
@@ -109,30 +108,35 @@ inline Mat4<float> Transform3::rotate(const Vec3<T>& axis, float rad)
 
 }
 
-template<typename T>
-inline Mat4<T> Transform3::view(const Vec3<T>& eye, const Vec3<T>& dir, const Vec3<T>& up)
-{
-	const Vec3<T> g = dir.normalize();
-	const Vec3<T> t = up.normalize();
-	const Vec3<T> a = g.cross(t).normalize();
 
-	return Mat4<T>(
-		a.x, a.y, a.z, -eye.x,
-		t.x, t.y, t.z, -eye.y,
-		-g.x, -g.y, -g.z, -eye.z,
+inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& dir, const Vec3<float>& up)
+{
+	const Vec3<float> g = dir.normalize();
+	const Vec3<float> t = up.normalize();
+	const Vec3<float> a = g.cross(t).normalize();
+
+	return Mat4<float>(
+		a.x, a.y, a.z, 0,
+		t.x, t.y, t.z, 0,
+		-g.x, -g.y, -g.z, 0,
 		0, 0, 0, 1
+		)
+		* Mat4<float>(
+			1, 0, 0, -eye.x,
+			0, 1, 0, -eye.y,
+			0, 0, 1, -eye.z,
+			0, 0, 0, 1
 		);
 }
 
-template<typename T>
-inline Mat4<float> Transform3::orth(T left_x, T right_x, T top_y, T bottom_y, T near_z, T far_z)
+inline Mat4<float> Transform3::orth(float left_x, float right_x, float top_y, float bottom_y, float near_z, float far_z)
 {
 	near_z = near_z > 0 ? -near_z : near_z;
 	far_z = far_z > 0 ? -far_z : far_z;
 
-	T ixx = 1.0 / (right_x - left_x);
-	T iyy = 1.0 / (top_y - bottom_y);
-	T izz = 1.0 / (near_z - far_z);
+	float ixx = 1.0 / (right_x - left_x);
+	float iyy = 1.0 / (top_y - bottom_y);
+	float izz = 1.0 / (near_z - far_z);
 	return Mat4<float>(
 		2 * ixx, 0, 0, -(right_x + left_x) * 1.0 * ixx,
 		0, 2 * iyy, 0, -(top_y + bottom_y) * 1.0 * iyy,
@@ -142,8 +146,8 @@ inline Mat4<float> Transform3::orth(T left_x, T right_x, T top_y, T bottom_y, T 
 }
 
 
-template<typename T>
-inline Mat4<float> Transform3::persp(T fovY_rad, T ratio_wh, T near_z, T far_z)
+
+inline Mat4<float> Transform3::persp(float fovY_rad, float ratio_wh, float near_z, float far_z)
 {
 
 	float n = near_z > 0 ? -near_z : near_z;
@@ -161,12 +165,11 @@ inline Mat4<float> Transform3::persp(T fovY_rad, T ratio_wh, T near_z, T far_z)
 		);
 }
 
-template<typename T>
-inline Mat4<int> Transform3::viewport(int width, int height)
+inline Mat4<float> Transform3::viewport(int width, int height)
 {
-	return Mat4<int>(
+	return Mat4<float>(
 		width / 2, 0, 0, width / 2,
-		0, height / 2, 0, height / 2,
+		0, -height / 2, 0, height / 2,
 		0, 0, 1, 0,
 		0, 0, 0, 1
 		);

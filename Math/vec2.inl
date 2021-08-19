@@ -43,6 +43,15 @@ inline T& Vec2<T>::operator[](size_t i)
 	return m[i];
 }
 
+template<typename T>
+inline Vec2<T> Vec2<T>::operator-(const Vec2<T>& rhs) const noexcept
+{
+	return Vec2<T>(
+		x - rhs.x,
+		y - rhs.y
+		);
+}
+
 
 template<typename T>
 inline std::string Vec2<T>::to_str() const
@@ -51,4 +60,10 @@ inline std::string Vec2<T>::to_str() const
 		+ std::to_string(x) + ", "
 		+ std::to_string(y) + ", "
 		+ "]";
+}
+
+template<typename T>
+inline T Vec2<T>::cross_z(const Vec2<T>& rhs) const
+{
+	return x * rhs.y - y * rhs.x;
 }

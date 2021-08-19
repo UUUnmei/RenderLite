@@ -17,18 +17,19 @@ struct Vec2 {
 	// basic
 	Vec2() noexcept;
 	Vec2(T x, T y) noexcept;
-	Vec2(const std::pair<T, T>& t) noexcept;
-	explicit Vec2(const Vec2& t) noexcept;
+	explicit Vec2(const std::pair<T, T>& t) noexcept;
+	Vec2(const Vec2& t) noexcept;
 	Vec2<T>& operator=(const Vec2& t) noexcept;
 	~Vec2() = default;
 
 	// operator
 	const T& operator[] (size_t i) const;
 	T& operator[] (size_t i);
+	Vec2<T> operator-(const Vec2<T>& rhs) const noexcept;
 
 	// general
 	std::string to_str(void) const;
-
+	T cross_z(const Vec2<T>& rhs) const;
 };
 
 using Vec2i = Vec2<int>;

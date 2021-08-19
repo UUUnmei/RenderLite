@@ -5,7 +5,7 @@
 template<typename T>
 inline Vec4<T> Vec4<T>::homogenize() const
 {
-	if (!w) return *this;
+	if (!w) return Vec4<T>(x, y, z, w);
 	return Vec4<T>(x / w, y / w, z / w, 1);
 }
 
@@ -24,7 +24,7 @@ inline Vec4<T>::Vec4(const Vec4<T>& t)  noexcept
 
 
 template<typename T>
-inline Vec4<T>& Vec4<T>::operator=(const Vec4& t) noexcept
+inline Vec4<T>& Vec4<T>::operator=(const Vec4<T>& t) noexcept
 {
 	if (this == &t) return *this;
 	x = t.x;
@@ -56,7 +56,7 @@ inline bool Vec4<T>::is_zero(void) const noexcept
 
 
 template<typename T>
-inline bool Vec4<T>::operator==(const Vec4<T>& rhs) noexcept
+inline bool Vec4<T>::operator==(const Vec4<T>& rhs) const noexcept
 {
 	return x == rhs.x
 		&& y == rhs.y
@@ -67,7 +67,7 @@ inline bool Vec4<T>::operator==(const Vec4<T>& rhs) noexcept
 
 
 template<typename T>
-inline bool Vec4<T>::operator!=(const Vec4<T>& rhs) noexcept
+inline bool Vec4<T>::operator!=(const Vec4<T>& rhs) const noexcept
 {
 	return x != rhs.x
 		|| y != rhs.y
@@ -79,7 +79,7 @@ inline bool Vec4<T>::operator!=(const Vec4<T>& rhs) noexcept
 
 
 template<typename T>
-inline bool Vec4<T>::operator<(const Vec4<T>& rhs) noexcept
+inline bool Vec4<T>::operator<(const Vec4<T>& rhs) const noexcept
 {
 	return x < rhs.x
 		&& y < rhs.y
@@ -188,50 +188,50 @@ inline Vec4<T>& Vec4<T>::operator/=(T rhs)
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator+(const Vec4<T>& rhs) noexcept
+inline Vec4<T> Vec4<T>::operator+(const Vec4<T>& rhs) const noexcept
 {
 	return Vec4<T>(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator-(const Vec4<T>& rhs) noexcept
+inline Vec4<T> Vec4<T>::operator-(const Vec4<T>& rhs) const noexcept
 {
 	return Vec4<T>(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator*(const Vec4<T>& rhs) noexcept
+inline Vec4<T> Vec4<T>::operator*(const Vec4<T>& rhs) const noexcept
 {
 	return Vec4<T>(x * rhs.x, y * rhs.y, z * rhs.z, w * rhs.w);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator/(const Vec4<T>& rhs)
+inline Vec4<T> Vec4<T>::operator/(const Vec4<T>& rhs) const
 {
 	// // assert(rhs.is_zero() == false);
 	return Vec4<T>(x / rhs.x, y / rhs.y, z / rhs.z, w / rhs.w);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator+(T rhs) noexcept
+inline Vec4<T> Vec4<T>::operator+(T rhs) const noexcept
 {
 	return Vec4<T>(x + rhs, y + rhs, z + rhs, w + rhs);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator-(T rhs) noexcept
+inline Vec4<T> Vec4<T>::operator-(T rhs) const noexcept
 {
 	return Vec4<T>(x - rhs, y - rhs, z - rhs, w - rhs);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator*(T rhs) noexcept
+inline Vec4<T> Vec4<T>::operator*(T rhs) const noexcept
 {
 	return Vec4<T>(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
 template<typename T>
-inline Vec4<T> Vec4<T>::operator/(T rhs)
+inline Vec4<T> Vec4<T>::operator/(T rhs) const
 {
 	// assert(rhs != 0);
 	return Vec4<T>(x / rhs, y / rhs, z / rhs, w / rhs);

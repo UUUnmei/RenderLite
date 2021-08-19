@@ -3,6 +3,7 @@
 #include "predecl.h"
 #include "mat4.h"
 
+
 template<typename T>
 inline Mat4<T>::Mat4() noexcept
 	: Mat4(identity()) { }
@@ -18,13 +19,13 @@ inline Mat4<T>::Mat4(
 		   {m20, m21, m22, m23},
 		   {m30, m31, m32, m33}} { }
 
-template<typename T>
-inline Mat4<T>::Mat4(const Mat4& t) noexcept
-	:cols(t.cols[0], t.cols[1], t.cols[2], t.cols[3]) { }
+//template<typename T>
+//inline Mat4<T>::Mat4(const Mat4<T>& t) noexcept
+//	:cols{ t.cols[0], t.cols[1], t.cols[2], t.cols[3] } { }
+//
 
-
 template<typename T>
-inline Mat4<T>& Mat4<T>::operator=(const Mat4& t) noexcept
+inline Mat4<T>& Mat4<T>::operator=(const Mat4<T>& t) noexcept
 {
 	if (this == &t) return *this;
 	for (int i = 0; i < 4; ++i)
@@ -44,6 +45,17 @@ inline Mat4<T> Mat4<T>::identity()
 }
 
 template<typename T>
+inline Mat4<T> Mat4<T>::all(T val)
+{
+	return Mat4<T>(
+		val, val, val, val,
+		val, val, val, val,
+		val, val, val, val,
+		val, val, val, val
+		);
+}
+
+template<typename T>
 inline Mat4<T> Mat4<T>::from_cols(const Vec4<T>& c0, const Vec4<T>& c1, const Vec4<T>& c2, const Vec4<T>& c3)
 {
 	return Mat4<T>(
@@ -55,27 +67,56 @@ inline Mat4<T> Mat4<T>::from_cols(const Vec4<T>& c0, const Vec4<T>& c1, const Ve
 }
 
 template<typename T>
+inline Mat4<T> Mat4<T>::from_rows(const Vec4<T>& r0, const Vec4<T>& r1, const Vec4<T>& r2, const Vec4<T>& r3)
+{
+	return Mat4<T>(
+		r0.x, r0.y, r0.z, r0.w,
+		r1.x, r1.y, r1.z, r1.w,
+		r2.x, r2.y, r2.z, r2.w,
+		r3.x, r3.y, r3.z, r3.w
+		);
+}
+
+template<typename T>
 inline T& Mat4<T>::operator()(size_t row, size_t col) 
 {
-	return cols[row][col];
+	return cols[col][row];
 }
 
 template<typename T>
 inline const T& Mat4<T>::operator()(size_t row, size_t col) const 
 {
-	return cols[row][col];
+	return cols[col][row];
 }
 
 template<typename T>
-inline Vec4<T> Mat4<T>::get_row(size_t idx) const
+inline const Vec4<T> Mat4<T>::get_row(size_t idx) const
 {
 	return Vec4<T>(cols[0][idx], cols[1][idx], cols[2][idx], cols[3][idx]);
 }
 
 template<typename T>
-inline Vec4<T> Mat4<T>::get_col(size_t idx) const
+inline const Vec4<T> Mat4<T>::get_col(size_t idx) const
 {
 	return cols[idx];
+}
+
+template<typename T>
+inline Vec4<T> Mat4<T>::get_row(size_t idx)
+{
+	return Vec4<T>(cols[0][idx], cols[1][idx], cols[2][idx], cols[3][idx]);
+}
+
+template<typename T>
+inline Vec4<T> Mat4<T>::get_col(size_t idx)
+{
+	return cols[idx];
+}
+
+template<typename T>
+inline Mat4<T> Mat4<T>::transpose(void) const
+{
+	return from_rows(cols[0], cols[1], cols[2], cols[3]);
 }
 
 template<typename T>
@@ -89,6 +130,7 @@ template<typename T>
 inline Mat4<T> Mat4<T>::operator*(const Mat4<T>& rhs) const
 {
 	Mat4<T> ret;
+
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			ret(i, j) = get_row(i).dot(rhs.get_col(j));
@@ -101,13 +143,24 @@ inline Mat4<T> Mat4<T>::operator*(const Mat4<T>& rhs) const
 template<typename T>
 inline Vec4<T> Mat4<T>::operator*(const Vec4<T>& rhs) const
 {
-	Vec4<T> c0 = cols[0] * rhs.x;
-	Vec4<T> c1 = cols[1] * rhs.y;
-	Vec4<T> c2 = cols[2] * rhs.z;
-	Vec4<T> c3 = cols[3] * rhs.w;
+	Vec4<T> c0 = rhs.x * cols[0];
+	Vec4<T> c1 = rhs.y * cols[1];
+	Vec4<T> c2 = rhs.z * cols[2];
+	Vec4<T> c3 = rhs.w * cols[3];
 
 	return c0 + c1 + c2 + c3;
 }
+
+template<typename T>
+inline Vec4<T> operator*(const Vec4<T>& lhs, const Mat4<T>& rhs) {
+	return Vec4<T>(
+		lhs.dot(rhs.get_col(0)),
+		lhs.dot(rhs.get_col(1)),
+		lhs.dot(rhs.get_col(2)),
+		lhs.dot(rhs.get_col(3))
+		);
+}
+
 
 template<typename T>
 inline Mat4<T> Mat4<T>::operator+(const Mat4<T>& rhs) const

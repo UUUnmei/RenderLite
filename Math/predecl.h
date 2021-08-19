@@ -50,6 +50,9 @@ struct Math {
 		return a + (b - a) * t;
 	}
 
+
+
+
 	// 矢量转整数颜色
 	template<typename T>
 	static uint32_t vec_to_color(const Vec4<T>& color) {

@@ -20,21 +20,21 @@ struct Vec3 {
 	// basic
 	Vec3() noexcept;
 	Vec3(T x, T y, T z) noexcept;
-	explicit Vec3(const Vec3& t) noexcept;
-	Vec3<T>& operator=(const Vec3& t) noexcept;
+	Vec3(const Vec3<T>& t) noexcept;
+	Vec3<T>& operator=(const Vec3<T>& t) noexcept;
 	~Vec3() = default;
 
 	// operator
 	const T& operator[] (size_t i) const;
 	T& operator[] (size_t i);
 
-	bool operator==(const Vec3<T>& rhs) noexcept;
-	bool operator!=(const Vec3<T>& rhs) noexcept;
-	bool operator<(const Vec3<T>& rhs) noexcept;
+	bool operator==(const Vec3<T>& rhs) const noexcept;
+	bool operator!=(const Vec3<T>& rhs) const noexcept;
+	bool operator<(const Vec3<T>& rhs) const noexcept;
 
-	Vec3<T> operator+() noexcept;			// 正号
-	Vec3<T> operator-() noexcept;			// 负号
-	bool operator!() noexcept;
+	Vec3<T> operator+() const noexcept;			// 正号
+	Vec3<T> operator-() const noexcept;			// 负号
+	bool operator!() const noexcept;
 
 	Vec3<T>& operator+=(const Vec3<T>& rhs) noexcept;
 	Vec3<T>& operator-=(const Vec3<T>& rhs) noexcept;
@@ -43,16 +43,16 @@ struct Vec3 {
 	Vec3<T>& operator+=(T rhs) noexcept;
 	Vec3<T>& operator-=(T rhs) noexcept;
 	Vec3<T>& operator*=(T rhs) noexcept;
-	Vec3<T>& operator/=(T rhs);
+	Vec3<T>& operator/=(T rhs) ;
 
-	Vec3<T> operator+(const Vec3<T>& rhs) noexcept;
-	Vec3<T> operator-(const Vec3<T>& rhs) noexcept;
-	Vec3<T> operator*(const Vec3<T>& rhs) noexcept;				// pairwise 不是点积
-	Vec3<T> operator/(const Vec3<T>& rhs);
-	Vec3<T> operator+(T rhs) noexcept;
-	Vec3<T> operator-(T rhs) noexcept;
-	Vec3<T> operator*(T rhs) noexcept;
-	Vec3<T> operator/(T rhs);
+	Vec3<T> operator+(const Vec3<T>& rhs) const noexcept;
+	Vec3<T> operator-(const Vec3<T>& rhs) const noexcept;
+	Vec3<T> operator*(const Vec3<T>& rhs) const noexcept;				// pairwise 不是点积
+	Vec3<T> operator/(const Vec3<T>& rhs) const;
+	Vec3<T> operator+(T rhs) const noexcept;
+	Vec3<T> operator-(T rhs) const noexcept;
+	Vec3<T> operator*(T rhs) const noexcept;
+	Vec3<T> operator/(T rhs) const;
 
 	// 还有 T op Vec3<T> 的重载  op包括 + * 
 

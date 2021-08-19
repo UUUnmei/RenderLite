@@ -24,17 +24,17 @@ struct Vec4 {
 	// basic
 	Vec4() noexcept;
 	Vec4(T x, T y, T z, T w) noexcept;
-	explicit Vec4(const Vec4& t) noexcept;
-	Vec4<T>& operator=(const Vec4& t) noexcept;
+	Vec4(const Vec4<T>& t) noexcept;
+	Vec4<T>& operator=(const Vec4<T>& t) noexcept;
 	~Vec4() = default;
 
 	// operator
 	const T& operator[] (size_t i) const;
 	T& operator[] (size_t i);
 
-	bool operator==(const Vec4<T>&rhs) noexcept;
-	bool operator!=(const Vec4<T>&rhs) noexcept;
-	bool operator<(const Vec4<T>&rhs) noexcept;
+	bool operator==(const Vec4<T>&rhs) const noexcept;
+	bool operator!=(const Vec4<T>&rhs) const noexcept;
+	bool operator<(const Vec4<T>&rhs) const noexcept;
 
 	Vec4<T> operator+() noexcept;			// 正号
 	Vec4<T> operator-() noexcept;			// 负号
@@ -49,14 +49,14 @@ struct Vec4 {
 	Vec4<T>& operator*=(T rhs) noexcept;
 	Vec4<T>& operator/=(T rhs);
 
-	Vec4<T> operator+(const Vec4<T>&rhs) noexcept;
-	Vec4<T> operator-(const Vec4<T>&rhs) noexcept;
-	Vec4<T> operator*(const Vec4<T>&rhs) noexcept;				// pairwise 不是点积
-	Vec4<T> operator/(const Vec4<T>&rhs);
-	Vec4<T> operator+(T rhs) noexcept;
-	Vec4<T> operator-(T rhs) noexcept;
-	Vec4<T> operator*(T rhs) noexcept;
-	Vec4<T> operator/(T rhs);
+	Vec4<T> operator+(const Vec4<T>&rhs) const noexcept;
+	Vec4<T> operator-(const Vec4<T>&rhs) const noexcept;
+	Vec4<T> operator*(const Vec4<T>&rhs) const noexcept;				// pairwise 不是点积
+	Vec4<T> operator/(const Vec4<T>&rhs) const;
+	Vec4<T> operator+(T rhs) const noexcept;
+	Vec4<T> operator-(T rhs) const noexcept;
+	Vec4<T> operator*(T rhs) const noexcept;
+	Vec4<T> operator/(T rhs) const;
 
 	// 还有 T op Vec4<T> 的重载  op包括 + * 
 

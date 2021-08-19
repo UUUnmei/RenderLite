@@ -16,7 +16,7 @@ inline Vec3<T>::Vec3(const Vec3<T>& t)  noexcept
 
 
 template<typename T>
-inline Vec3<T>& Vec3<T>::operator=(const Vec3& t) noexcept
+inline Vec3<T>& Vec3<T>::operator=(const Vec3<T>& t) noexcept
 {
 	if (this == &t) return *this;
 	x = t.x;
@@ -47,7 +47,7 @@ inline bool Vec3<T>::is_zero(void) const noexcept
 
 
 template<typename T>
-inline bool Vec3<T>::operator==(const Vec3<T>& rhs) noexcept
+inline bool Vec3<T>::operator==(const Vec3<T>& rhs) const noexcept
 {
 	return x == rhs.x
 		&& y == rhs.y
@@ -57,7 +57,7 @@ inline bool Vec3<T>::operator==(const Vec3<T>& rhs) noexcept
 
 
 template<typename T>
-inline bool Vec3<T>::operator!=(const Vec3<T>& rhs) noexcept
+inline bool Vec3<T>::operator!=(const Vec3<T>& rhs) const noexcept
 {
 	return x != rhs.x
 		|| y != rhs.y
@@ -66,7 +66,7 @@ inline bool Vec3<T>::operator!=(const Vec3<T>& rhs) noexcept
 
 
 template<typename T>
-inline bool Vec3<T>::operator<(const Vec3<T>& rhs) noexcept
+inline bool Vec3<T>::operator<(const Vec3<T>& rhs) const noexcept
 {
 	return x < rhs.x
 		&& y < rhs.y
@@ -74,19 +74,19 @@ inline bool Vec3<T>::operator<(const Vec3<T>& rhs) noexcept
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator+() noexcept
+inline Vec3<T> Vec3<T>::operator+() const noexcept
 {
 	return Vec3<T>(x, y, z);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator-() noexcept
+inline Vec3<T> Vec3<T>::operator-() const noexcept
 {
 	return Vec3<T>(-x, -y, -z);
 }
 
 template<typename T>
-inline bool Vec3<T>::operator!() noexcept
+inline bool Vec3<T>::operator!() const noexcept
 {
 	return is_zero();
 }
@@ -166,50 +166,50 @@ inline Vec3<T>& Vec3<T>::operator/=(T rhs)
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator+(const Vec3<T>& rhs) noexcept
+inline Vec3<T> Vec3<T>::operator+(const Vec3<T>& rhs) const noexcept
 {
 	return Vec3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator-(const Vec3<T>& rhs) noexcept
+inline Vec3<T> Vec3<T>::operator-(const Vec3<T>& rhs) const noexcept
 {
 	return Vec3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator*(const Vec3<T>& rhs) noexcept
+inline Vec3<T> Vec3<T>::operator*(const Vec3<T>& rhs) const noexcept
 {
 	return Vec3<T>(x * rhs.x, y * rhs.y, z * rhs.z);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator/(const Vec3<T>& rhs)
+inline Vec3<T> Vec3<T>::operator/(const Vec3<T>& rhs) const
 {
 	// // assert(rhs.is_zero() == false);
 	return Vec3<T>(x / rhs.x, y / rhs.y, z / rhs.z);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator+(T rhs) noexcept
+inline Vec3<T> Vec3<T>::operator+(T rhs) const noexcept
 {
 	return Vec3<T>(x + rhs, y + rhs, z + rhs);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator-(T rhs) noexcept
+inline Vec3<T> Vec3<T>::operator-(T rhs) const noexcept
 {
 	return Vec3<T>(x - rhs, y - rhs, z - rhs);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator*(T rhs) noexcept
+inline Vec3<T> Vec3<T>::operator*(T rhs) const noexcept
 {
 	return Vec3<T>(x * rhs, y * rhs, z * rhs);
 }
 
 template<typename T>
-inline Vec3<T> Vec3<T>::operator/(T rhs)
+inline Vec3<T> Vec3<T>::operator/(T rhs) const
 {
 	// assert(rhs != 0);
 	return Vec3<T>(x / rhs, y / rhs, z / rhs);
@@ -235,7 +235,7 @@ inline Vec2<T> Vec3<T>::to_vec2(void) const
 }
 
 template<typename T>
-inline Vec4<T> Vec3<T>::to_vec4(void) const
+inline Vec4<T> Vec3<T>::to_vec4(void) const 
 {
 	return Vec4<T>(x, y, z, 1);
 }
