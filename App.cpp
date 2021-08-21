@@ -7,6 +7,7 @@ App::App()
 	: wnd(800, 600, "Main Window")
 {
 	//wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(1, 1, 1)));
+	wnd.Gfx().mode = Graphics::RenderMode::FILLEDTRIANGLE;
 }
 
 int App::Go() {
@@ -24,6 +25,15 @@ int App::Go() {
 		DoFrame();
 		
 		update_fps();
+
+		if (wnd.kbd.KeyIsPressed(VK_SPACE)) {
+			// 切换显示模式，
+			// 在线框模式下，可能由于帧数较高，每帧过短，按下一次空格可能被识别多次，导致切换不成功或者是有闪烁。。。。
+			if (wnd.Gfx().mode == Graphics::RenderMode::WIREFRAME)
+				wnd.Gfx().mode = Graphics::RenderMode::FILLEDTRIANGLE;
+			else
+				wnd.Gfx().mode = Graphics::RenderMode::WIREFRAME;
+		}
 	}
 }
 

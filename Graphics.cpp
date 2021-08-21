@@ -32,6 +32,10 @@ Graphics::Graphics(HWND hWnd, int width, int height)
 	screen_ob = (HBITMAP)SelectObject(screen_dc, screen_hb);
 
 	memset(framebuffer, 0, width * height * sizeof(unsigned int));
+
+	depthbuffer = std::make_unique<float[]>(width * height);
+
+
 }
 
 
@@ -66,8 +70,12 @@ void Graphics::set_pixel(int idx, uint32_t color)
 void Graphics::clear_buffer(uint32_t color)
 {
 	for (int i = 0; i < height; ++i)
-		for (int j = 0; j < width; ++j)
+		for (int j = 0; j < width; ++j) {
 			framebuffer[i * width + j] = color;
+			depthbuffer[i * width + j] = -std::numeric_limits<float>::infinity();
+		}
+			
+
 }
 
 void Graphics::draw(void)
@@ -210,7 +218,11 @@ void Graphics::DrawTriangle(float angle)
 	Vec3f vertices[] = {
 		{2, 0, -2},
 		{0, 2, -2},
-		{-2, 0, -2}
+		{-2, 0, -2},
+		{0, -2, -5},
+		{3.5, -1, -5},
+		{2.5, 1.5, -5},
+		{-1, 0.5, 1},
 	};
 	Vec3f colors[] = {
 		{1.0f, 0.0f, 0.0f},
@@ -218,49 +230,67 @@ void Graphics::DrawTriangle(float angle)
 		{0.0f, 0.0f, 1.0f},
 	};
 	static int vertex_indices[] = {
-		0, 1, 2
+		0, 1, 2,
+		0, 2, 3,
+		4, 5, 6,
 	};
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	Mat4f mvp = Transform3::rotate_y(angle) * Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
-		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0)) 
+	Mat4f mvp = Transform3::rotate_z(angle) * Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
 		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 50);
 
-	for (auto& v : vertices) {
-		auto t = (v.to_vec4() * mvp).homogenize();
-		v = (t * vp).to_vec3();
-	}
-	auto c = Math::vec_to_color(Vec3f(0,0,0));
+	int tri_n = sizeof(vertex_indices) / sizeof(int) / 3;
+	for (int i = 0; i < tri_n; ++i) {
+		// 取一个三角形
+		Vec3f v1 = vertices[vertex_indices[3 * i]];
+		Vec3f v2 = vertices[vertex_indices[3 * i + 1]];
+		Vec3f v3 = vertices[vertex_indices[3 * i + 2]];
 
-	//draw_line(vertices[0], vertices[1], c);
-	//draw_line(vertices[1], vertices[2], c);
-	//draw_line(vertices[2], vertices[0], c);
+		//坐标变换
+		v1 = ((v1.to_vec4() * mvp).homogenize() * vp).to_vec3();
+		v2 = ((v2.to_vec4() * mvp).homogenize() * vp).to_vec3();
+		v3 = ((v3.to_vec4() * mvp).homogenize() * vp).to_vec3();
 
-	// aabb
-	int minx = std::floor(std::min({ vertices[0].x, vertices[1].x ,vertices[2].x }));
-	int maxx = std::ceil(std::max({ vertices[0].x, vertices[1].x ,vertices[2].x }));
-	int miny = std::floor(std::min({ vertices[0].y, vertices[1].y ,vertices[2].y }));
-	int maxy = std::ceil(std::max({ vertices[0].y, vertices[1].y ,vertices[2].y }));
-	minx = std::max(0, minx - 1);
-	maxx = std::min(width - 1, maxx + 1);
-	miny = std::max(0, miny);
-	maxy = std::min(height - 1, maxy + 1);
-
-	for (int i = minx; i <= maxx; ++i) {
-		for (int j = miny; j < maxy; ++j) {
-		// basic rasterization
-			 float x = i + 0.5;
-			 float y = j + 0.5;
-			 float alpha, beta, gamma;
-			 computeBarycentric2D(x, y, vertices, alpha, beta, gamma);
-			 if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
-				 set_pixel_unsafe(i, j,
-					 	 Math::vec_to_color(alpha * colors[0] + beta * colors[1] + gamma * colors[2]));
-			 }
-
-
+		if (mode == Graphics::RenderMode::WIREFRAME) {
+			auto c = Math::vec_to_color(Vec3f(0,0,0));
+			draw_line(v1, v2, c);
+			draw_line(v2, v3, c);
+			draw_line(v3, v1, c);
+			continue;
 		}
-	}
 
+		int minx = std::floor(std::min({ v1.x, v2.x ,v3.x }));
+		int maxx = std::ceil(std::max({ v1.x, v2.x ,v3.x }));
+		int miny = std::floor(std::min({ v1.y, v2.y ,v3.y }));
+		int maxy = std::ceil(std::max({ v1.y, v2.y ,v3.y }));
+		minx = std::max(0, minx - 1);
+		maxx = std::min(width - 1, maxx + 1);
+		miny = std::max(0, miny);
+		maxy = std::min(height - 1, maxy + 1);
+
+		Vec3f vb[] = { v1, v2, v3 };
+
+		for (int j = miny; j < maxy; ++j){
+			for (int i = minx; i <= maxx; ++i) {
+				// basic rasterization
+				float x = i + 0.5;
+				float y = j + 0.5;
+				float alpha, beta, gamma;
+				computeBarycentric2D(x, y, vb, alpha, beta, gamma);
+				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+
+					float Z = v1.z * alpha + v2.z * beta + v3.z * gamma;
+
+					if (Z > depthbuffer[j * width + i]) { //深度测试
+						depthbuffer[j * width + i] = Z;
+						set_pixel_unsafe(i, j,
+							Math::vec_to_color(colors[0] * alpha + colors[1] * beta + colors[2] * gamma));
+					}
+				}
+			}
+		}
+
+	}
 
 }
