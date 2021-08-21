@@ -13,6 +13,7 @@ public:
 	~Graphics();
 
 	void set_pixel(int x, int y, uint32_t color);
+	void set_pixel_unsafe(int x, int y, uint32_t color);
 	void set_pixel(int idx, uint32_t color);
 	void clear_buffer(uint32_t color);
 	void draw(void);

@@ -50,6 +50,12 @@ void Graphics::set_pixel(int x, int y, uint32_t color)
 	framebuffer[y * width + x] = color;
 }
 
+void Graphics::set_pixel_unsafe(int x, int y, uint32_t color)
+{
+	framebuffer[y * width + x] = color;
+}
+
+
 void Graphics::set_pixel(int idx, uint32_t color)
 {
 	static int limit = width * height;
@@ -167,12 +173,15 @@ void Graphics::draw_line(const Vec3<T>& start, const Vec3<T>& end, uint32_t colo
 
 
 
-static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vec3f* v)
+//static std::tuple<float, float, float>   //性能分析发现这个返回值太慢了
+void computeBarycentric2D(float x, float y, const Vec3f* v,
+	float &c1, float& c2, float& c3)		
 {
-	float c1 = (x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * y + v[1].x * v[2].y - v[2].x * v[1].y) / (v[0].x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * v[0].y + v[1].x * v[2].y - v[2].x * v[1].y);
-	float c2 = (x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * y + v[2].x * v[0].y - v[0].x * v[2].y) / (v[1].x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * v[1].y + v[2].x * v[0].y - v[0].x * v[2].y);
-	float c3 = (x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * y + v[0].x * v[1].y - v[1].x * v[0].y) / (v[2].x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * v[2].y + v[0].x * v[1].y - v[1].x * v[0].y);
-	return { c1,c2,c3 };
+	c1 = (x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * y + v[1].x * v[2].y - v[2].x * v[1].y) / (v[0].x * (v[1].y - v[2].y) + (v[2].x - v[1].x) * v[0].y + v[1].x * v[2].y - v[2].x * v[1].y);
+	c2 = (x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * y + v[2].x * v[0].y - v[0].x * v[2].y) / (v[1].x * (v[2].y - v[0].y) + (v[0].x - v[2].x) * v[1].y + v[2].x * v[0].y - v[0].x * v[2].y);
+	//float c3 = (x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * y + v[0].x * v[1].y - v[1].x * v[0].y) / (v[2].x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * v[2].y + v[0].x * v[1].y - v[1].x * v[0].y);
+	c3 = 1 - c1 - c2;
+	//return std::tuple<float, float, float>(c1, c2, 1 - c1 - c2);
 }
 
 static bool mycross(const Vec2f& a, const Vec2f& b) {
@@ -223,9 +232,9 @@ void Graphics::DrawTriangle(float angle)
 	}
 	auto c = Math::vec_to_color(Vec3f(0,0,0));
 
-	draw_line(vertices[0], vertices[1], c);
-	draw_line(vertices[1], vertices[2], c);
-	draw_line(vertices[2], vertices[0], c);
+	//draw_line(vertices[0], vertices[1], c);
+	//draw_line(vertices[1], vertices[2], c);
+	//draw_line(vertices[2], vertices[0], c);
 
 	// aabb
 	int minx = std::floor(std::min({ vertices[0].x, vertices[1].x ,vertices[2].x }));
@@ -242,11 +251,14 @@ void Graphics::DrawTriangle(float angle)
 		// basic rasterization
 			 float x = i + 0.5;
 			 float y = j + 0.5;
-			 if(insideTriangle(x, y, vertices)){
-			     auto[alpha, beta, gamma] = computeBarycentric2D(x, y, vertices);
-				 set_pixel(i, j,
-					 Math::vec_to_color(alpha * colors[0] + beta * colors[1] + gamma * colors[2]));
+			 float alpha, beta, gamma;
+			 computeBarycentric2D(x, y, vertices, alpha, beta, gamma);
+			 if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+				 set_pixel_unsafe(i, j,
+					 	 Math::vec_to_color(alpha * colors[0] + beta * colors[1] + gamma * colors[2]));
 			 }
+
+
 		}
 	}
 
