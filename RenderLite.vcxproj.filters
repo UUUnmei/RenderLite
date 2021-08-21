@@ -91,6 +91,9 @@
     <ClInclude Include="Math\transform3.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="bmp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RenderLite.rc">

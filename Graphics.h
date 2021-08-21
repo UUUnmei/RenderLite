@@ -4,6 +4,7 @@
 
 #include "ChiliWin.h"
 #include "Math/Math.h"
+#include "bmp.h"
 #include <memory>
 
 class Graphics {
@@ -31,10 +32,11 @@ public:
 	void DrawTriangle(float angle);
 	//void DrawCube(float angle, float x, float y);
 
+	void save_as_bmp_file(const char* filename = "output.bmp");
 
 private:
 	
-
+	Bitmap bmp_manager;
 	
 	int width;
 	int height;

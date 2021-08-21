@@ -7,7 +7,7 @@
 
 
 Graphics::Graphics(HWND hWnd, int width, int height)
-	:width(width), height(height), screen_handle(hWnd)
+	:width(width), height(height), screen_handle(hWnd), bmp_manager(width, height)
 {
 	HDC hDC = GetDC(hWnd);
 	screen_dc = CreateCompatibleDC(hDC);
@@ -293,4 +293,13 @@ void Graphics::DrawTriangle(float angle)
 
 	}
 
+}
+
+void Graphics::save_as_bmp_file(const char* filename)
+{
+	int m = 0;
+	for (int j = 0; j < height; ++j)
+		for (int i = 0; i < width; ++i)
+			bmp_manager.SetPixel(i, j, framebuffer[m++]);
+	bmp_manager.SaveFile(filename);
 }
