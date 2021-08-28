@@ -35,6 +35,7 @@ int App::Go() {
 				wnd.Gfx().mode = Graphics::RenderMode::WIREFRAME;
 		}
 		else if (wnd.kbd.KeyIsPressed(VK_RETURN)) {
+			// °´»Ø³µ¼ü½ØÍ¼
 			wnd.Gfx().save_as_bmp_file();
 		}
 	}

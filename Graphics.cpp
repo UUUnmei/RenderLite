@@ -1,7 +1,8 @@
+
+
+
 #include "Graphics.h"
 #include "Exception.h"
-
-
 #include <iostream>
 
 
@@ -216,13 +217,22 @@ static bool insideTriangle(float x, float y, const Vec3f* _v)
 void Graphics::DrawTriangle(float angle)
 {
 	Vec3f vertices[] = {
-		{2, 0, -2},
-		{0, 2, -2},
-		{-2, 0, -2},
-		{0, -2, -5},
-		{3.5, -1, -5},
-		{2.5, 1.5, -5},
-		{-1, 0.5, 1},
+		//{2, 0, -2},
+		//{0, 2, -2},
+		//{-2, 0, -2},
+		//{0, -2, -10},
+		//{3.5, -1, -5},
+		//{2.5, 1.5, -5},
+		//{-1, 0.5, 1},
+
+		{-1.0f, -1.0f, -1.0f},
+		{1.0f, -1.0f, -1.0f},
+		{-1.0f, 1.0f, -1.0f},
+		{-1.0f, -1.0f, 1.0f},
+		{1.0f, -1.0f, 1.0f},
+		{-1.0f, 1.0f, 1.0f},
+		{1.0f, 1.0f, -1.0f},
+		{1.0f, 1.0f, 1.0f}
 	};
 	Vec3f colors[] = {
 		{1.0f, 0.0f, 0.0f},
@@ -230,15 +240,24 @@ void Graphics::DrawTriangle(float angle)
 		{0.0f, 0.0f, 1.0f},
 	};
 	static int vertex_indices[] = {
-		0, 1, 2,
-		0, 2, 3,
-		4, 5, 6,
+		//0, 1, 2,
+		//0, 2, 3,
+		//4, 5, 6,
+
+		0,2,1, 1,2,6,
+		1,6,7, 7,4,1,
+		4,7,5, 5,3,4,
+		5,2,0, 3,5,0,
+		7,6,2, 2,5,7,
+		0,1,4, 0,4,3
 	};
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	Mat4f mvp = Transform3::rotate_z(angle) * Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
-		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
+	Mat4f mvp =  Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+		//* Transform3::translate(2.0f,0.0f,0.0f) * Transform3::rotate_y(angle)
+		* Transform3::view(Vec3f(0, 0, 10), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
 		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 50);
+
 
 	int tri_n = sizeof(vertex_indices) / sizeof(int) / 3;
 	for (int i = 0; i < tri_n; ++i) {
@@ -248,9 +267,20 @@ void Graphics::DrawTriangle(float angle)
 		Vec3f v3 = vertices[vertex_indices[3 * i + 2]];
 
 		//坐标变换
-		v1 = ((v1.to_vec4() * mvp).homogenize() * vp).to_vec3();
-		v2 = ((v2.to_vec4() * mvp).homogenize() * vp).to_vec3();
-		v3 = ((v3.to_vec4() * mvp).homogenize() * vp).to_vec3();
+		//v1 = ((v1.to_vec4() * mvp).homogenize() * vp).to_vec3();
+		//v2 = ((v2.to_vec4() * mvp).homogenize() * vp).to_vec3();
+		//v3 = ((v3.to_vec4() * mvp).homogenize() * vp).to_vec3();
+
+		// 整一个w的倒数，为了透视矫正
+		auto vv1 = v1.to_vec4() * mvp;
+		auto vv2 = v2.to_vec4() * mvp;
+		auto vv3 = v3.to_vec4() * mvp;
+		//float vz[] = { -vv1.z, -vv2.z, -vv3.z };  //原模型z负数，乘完mvp是正的。。。后面插值需要负数，这里加个负号
+		float rhws[] = { 1.0f / vv1.w, 1.0f / vv2.w, 1.0f / vv3.w };
+		v1 = (vv1.homogenize() * vp).to_vec3();
+		v2 = (vv2.homogenize() * vp).to_vec3();
+		v3 = (vv3.homogenize() * vp).to_vec3();
+
 
 		if (mode == Graphics::RenderMode::WIREFRAME) {
 			auto c = Math::vec_to_color(Vec3f(0,0,0));
@@ -279,13 +309,25 @@ void Graphics::DrawTriangle(float angle)
 				float alpha, beta, gamma;
 				computeBarycentric2D(x, y, vb, alpha, beta, gamma);
 				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+					// 各属性插值
+					// 透视矫正调整系数
+					alpha *= rhws[0], beta *= rhws[1], gamma *= rhws[2];
+					float inv = 1.0 / (alpha + beta + gamma);
 
-					float Z = v1.z * alpha + v2.z * beta + v3.z * gamma;
+					//float Z = vz[0] * alpha + vz[1] * beta + vz[2] * gamma;
+					//Z *= inv;
+					float Z = rhws[0] * alpha + beta * rhws[1] + gamma * rhws[2];  // 深度测试可以用1/w代替z
 
 					if (Z > depthbuffer[j * width + i]) { //深度测试
 						depthbuffer[j * width + i] = Z;
+
+						
+
+						Vec3f color = inv * (colors[0] * alpha + colors[1] * beta + colors[2] * gamma);
+						
 						set_pixel_unsafe(i, j,
-							Math::vec_to_color(colors[0] * alpha + colors[1] * beta + colors[2] * gamma));
+							Math::vec_to_color(color));
+							//Math::vec_to_color(colors[0] * alpha + colors[1] * beta + colors[2] * gamma));
 					}
 				}
 			}

@@ -1,4 +1,7 @@
 
+
+// 注意为此打开了 _CRT_SECURE_NO_WARNINGS  在预处理器设置
+
 #pragma once
 #ifndef BMP_FILE_H
 #define BMP_FILE_H
