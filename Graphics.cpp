@@ -181,7 +181,6 @@ void Graphics::draw_line(const Vec3<T>& start, const Vec3<T>& end, uint32_t colo
 }
 
 
-
 //static std::tuple<float, float, float>   //性能分析发现这个返回值太慢了
 void computeBarycentric2D(float x, float y, const Vec3f* v,
 	float &c1, float& c2, float& c3)		
@@ -193,24 +192,28 @@ void computeBarycentric2D(float x, float y, const Vec3f* v,
 	//return std::tuple<float, float, float>(c1, c2, 1 - c1 - c2);
 }
 
-static bool mycross(const Vec2f& a, const Vec2f& b) {
 
-	return a.cross_z(b) > 0;
+bool check_cvv_clip(const Vec4f& v) {
+	float r = fabs(v.w), l = -r;
+	return v.x >= l && v.x <= r
+		&& v.y >= l && v.y <= r
+		&& v.z >= l && v.z <= r;
 }
 
-static bool insideTriangle(float x, float y, const Vec3f* _v)
-{
-
-	auto p = Vec2f(x, y);
-	auto a = Vec2f(_v[0].x, _v[0].y);
-	auto b = Vec2f(_v[1].x, _v[1].y);
-	auto c = Vec2f(_v[2].x, _v[2].y);
-
-	bool t1 = mycross(p - a, b - a);
-	bool t2 = mycross(p - b, c - b);
-	bool t3 = mycross(p - c, a - c);
-
-	return (t1 && t2 && t3) || (!t1 && !t2 && !t3);
+// 背面剔除，在mvp后和屏幕空间中都可以
+// 这里在的屏幕空间中处理
+// https://www.khronos.org/registry/OpenGL/specs/es/2.0/es_full_spec_2.0.pdf  Chapter 3.5.1
+//this is the same as(but more efficient than)
+// vec3_t ab = vec3_sub(b, a);
+// vec3_t ac = vec3_sub(c, a);
+// return vec3_cross(ab, ac).z > 0;   面积
+// 最后一句 等同于 dot(cross(ab,ac), eye_dir) > 0    eye_dir = (0,0,1) 这样就是看面的朝向了
+// 这里顺着opengl认为逆时针为正向，如果为正向返回true
+bool backface_culling(const Vec3f& v1, const Vec3f& v2, const Vec3f& v3) {
+	float a = v1.x * v2.y - v1.y * v2.x +
+		v2.x * v3.y - v2.y * v3.x +
+		v3.x * v1.y - v3.y * v1.x;
+	return -a > 0;  // 逆时针时对于上面计算的要取反"Setting dir to CCW indicates that the sign of a should be reversed prior to use"
 }
 
 
@@ -253,10 +256,11 @@ void Graphics::DrawTriangle(float angle)
 	};
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	Mat4f mvp =  Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+	Mat4f mvp =  Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
+		Transform3::scale(3 / 4.0f, 1.0f, 1.0f) 
 		//* Transform3::translate(2.0f,0.0f,0.0f) * Transform3::rotate_y(angle)
 		* Transform3::view(Vec3f(0, 0, 10), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
-		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 50);
+		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
 
 
 	int tri_n = sizeof(vertex_indices) / sizeof(int) / 3;
@@ -275,12 +279,18 @@ void Graphics::DrawTriangle(float angle)
 		auto vv1 = v1.to_vec4() * mvp;
 		auto vv2 = v2.to_vec4() * mvp;
 		auto vv3 = v3.to_vec4() * mvp;
-		//float vz[] = { -vv1.z, -vv2.z, -vv3.z };  //原模型z负数，乘完mvp是正的。。。后面插值需要负数，这里加个负号
+
+		// cvv 裁剪  整个放弃超过cvv的三角形
+		if (!check_cvv_clip(vv1)
+			|| !check_cvv_clip(vv2)
+			|| !check_cvv_clip(vv3))
+			continue;
+
 		float rhws[] = { 1.0f / vv1.w, 1.0f / vv2.w, 1.0f / vv3.w };
+		// 齐次化 & 视口变换
 		v1 = (vv1.homogenize() * vp).to_vec3();
 		v2 = (vv2.homogenize() * vp).to_vec3();
 		v3 = (vv3.homogenize() * vp).to_vec3();
-
 
 		if (mode == Graphics::RenderMode::WIREFRAME) {
 			auto c = Math::vec_to_color(Vec3f(0,0,0));
@@ -289,6 +299,12 @@ void Graphics::DrawTriangle(float angle)
 			draw_line(v3, v1, c);
 			continue;
 		}
+
+		// mode == Graphics::RenderMode::FILLEDTRIANGLE
+		 
+		// 背面剔除， 认为顺时针排列为正面
+		// 若为背面，则忽略
+		if (!backface_culling(v1, v2, v3)) continue;
 
 		int minx = std::floor(std::min({ v1.x, v2.x ,v3.x }));
 		int maxx = std::ceil(std::max({ v1.x, v2.x ,v3.x }));
@@ -314,8 +330,6 @@ void Graphics::DrawTriangle(float angle)
 					alpha *= rhws[0], beta *= rhws[1], gamma *= rhws[2];
 					float inv = 1.0 / (alpha + beta + gamma);
 
-					//float Z = vz[0] * alpha + vz[1] * beta + vz[2] * gamma;
-					//Z *= inv;
 					float Z = rhws[0] * alpha + beta * rhws[1] + gamma * rhws[2];  // 深度测试可以用1/w代替z
 
 					if (Z > depthbuffer[j * width + i]) { //深度测试
