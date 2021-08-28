@@ -78,11 +78,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\Visual Studio\RenderLite;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\include;D:\Visual Studio\RenderLite;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\lib\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Visual Studio\RenderLite;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\include;D:\Visual Studio\RenderLite;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,6 +129,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,6 +152,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Unmei\Downloads\assimp-5.0.1\assimp-5.0.1\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -155,6 +161,7 @@
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -173,6 +180,7 @@
     <ClInclude Include="Math\vec2.h" />
     <ClInclude Include="Math\vec3.h" />
     <ClInclude Include="Math\vec4.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Timer.h" />

@@ -5,7 +5,9 @@
 #include "Exception.h"
 #include <iostream>
 
-
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 Graphics::Graphics(HWND hWnd, int width, int height)
 	:width(width), height(height), screen_handle(hWnd), bmp_manager(width, height)
@@ -35,6 +37,17 @@ Graphics::Graphics(HWND hWnd, int width, int height)
 	memset(framebuffer, 0, width * height * sizeof(unsigned int));
 
 	depthbuffer = std::make_unique<float[]>(width * height);
+
+	model = std::make_unique<Model>("obj/diablo3_pose.obj");
+	//model = std::make_unique<Model>("obj/african_head.obj");
+
+
+	// Assimp Test
+	Assimp::Importer imp;
+	auto model = imp.ReadFile("obj/african_head.obj",
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices
+	);
 
 
 }
@@ -256,19 +269,26 @@ void Graphics::DrawTriangle(float angle)
 	};
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	Mat4f mvp =  Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
+	Mat4f mvp =  //Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
+		Transform3::rotate_y(angle) *
 		Transform3::scale(3 / 4.0f, 1.0f, 1.0f) 
 		//* Transform3::translate(2.0f,0.0f,0.0f) * Transform3::rotate_y(angle)
-		* Transform3::view(Vec3f(0, 0, 10), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
+		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
 		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
 
 
 	int tri_n = sizeof(vertex_indices) / sizeof(int) / 3;
-	for (int i = 0; i < tri_n; ++i) {
+	//for (int i = 0; i < tri_n; ++i) {
+	// 	// 取一个三角形
+	//	Vec3f v1 = vertices[vertex_indices[3 * i]];
+	//	Vec3f v2 = vertices[vertex_indices[3 * i + 1]];
+	//	Vec3f v3 = vertices[vertex_indices[3 * i + 2]];
+	for (int i = 0; i < model->nfaces(); ++i) {
+		auto f = model->face(i);
 		// 取一个三角形
-		Vec3f v1 = vertices[vertex_indices[3 * i]];
-		Vec3f v2 = vertices[vertex_indices[3 * i + 1]];
-		Vec3f v3 = vertices[vertex_indices[3 * i + 2]];
+		Vec3f v1 = model->vert(f[0]);
+		Vec3f v2 = model->vert(f[1]);
+		Vec3f v3 = model->vert(f[2]);
 
 		//坐标变换
 		//v1 = ((v1.to_vec4() * mvp).homogenize() * vp).to_vec3();
@@ -315,7 +335,7 @@ void Graphics::DrawTriangle(float angle)
 		miny = std::max(0, miny);
 		maxy = std::min(height - 1, maxy + 1);
 
-		Vec3f vb[] = { v1, v2, v3 };
+		Vec3f v_screen[] = { v1, v2, v3 };
 
 		for (int j = miny; j < maxy; ++j){
 			for (int i = minx; i <= maxx; ++i) {
@@ -323,7 +343,7 @@ void Graphics::DrawTriangle(float angle)
 				float x = i + 0.5;
 				float y = j + 0.5;
 				float alpha, beta, gamma;
-				computeBarycentric2D(x, y, vb, alpha, beta, gamma);
+				computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
 				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
 					// 各属性插值
 					// 透视矫正调整系数
@@ -335,8 +355,7 @@ void Graphics::DrawTriangle(float angle)
 					if (Z > depthbuffer[j * width + i]) { //深度测试
 						depthbuffer[j * width + i] = Z;
 
-						
-
+					
 						Vec3f color = inv * (colors[0] * alpha + colors[1] * beta + colors[2] * gamma);
 						
 						set_pixel_unsafe(i, j,

@@ -5,6 +5,7 @@
 #include "ChiliWin.h"
 #include "Math/Math.h"
 #include "bmp.h"
+#include "Model.h"
 #include <memory>
 
 class Graphics {
@@ -34,10 +35,13 @@ public:
 
 	void save_as_bmp_file(const char* filename = "output.bmp");
 
+
+
 private:
 	
 	Bitmap bmp_manager;
-	
+	std::unique_ptr<Model> model;
+
 	int width;
 	int height;
 	HWND screen_handle;		// Ö÷´°¿Ú HWND
