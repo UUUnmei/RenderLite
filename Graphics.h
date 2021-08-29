@@ -5,8 +5,9 @@
 #include "ChiliWin.h"
 #include "Math/Math.h"
 #include "bmp.h"
-#include "Model.h"
 #include <memory>
+
+#include "Object.h"
 
 class Graphics {
 public:
@@ -32,6 +33,7 @@ public:
 	void draw_line(const Vec3<T>& start, const Vec3<T>& end, uint32_t color);
 	void DrawTriangle(float angle);
 	//void DrawCube(float angle, float x, float y);
+	void draw_object(Object& obj);
 
 	void save_as_bmp_file(const char* filename = "output.bmp");
 
@@ -40,7 +42,6 @@ public:
 private:
 	
 	Bitmap bmp_manager;
-	std::unique_ptr<Model> model;
 
 	int width;
 	int height;
