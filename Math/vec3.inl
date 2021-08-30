@@ -235,9 +235,9 @@ inline Vec2<T> Vec3<T>::to_vec2(void) const
 }
 
 template<typename T>
-inline Vec4<T> Vec3<T>::to_vec4(void) const 
+inline Vec4<T> Vec3<T>::to_vec4(T w) const 
 {
-	return Vec4<T>(x, y, z, 1);
+	return Vec4<T>(x, y, z, w);
 }
 
 template<typename T>

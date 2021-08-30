@@ -14,10 +14,10 @@ inline Mat4<T>::Mat4(
 	T m10, T m11, T m12, T m13,
 	T m20, T m21, T m22, T m23, 
 	T m30, T m31, T m32, T m33) noexcept
-	: cols{{m00, m01, m02, m03},
-		   {m10, m11, m12, m13},
-		   {m20, m21, m22, m23},
-		   {m30, m31, m32, m33}} { }
+	: cols{{m00, m10, m20, m30},
+		   {m01, m11, m21, m31},
+		   {m02, m12, m22, m32},
+		   {m03, m13, m23, m33}} { }
 
 //template<typename T>
 //inline Mat4<T>::Mat4(const Mat4<T>& t) noexcept
@@ -117,6 +117,63 @@ template<typename T>
 inline Mat4<T> Mat4<T>::transpose(void) const
 {
 	return from_rows(cols[0], cols[1], cols[2], cols[3]);
+}
+
+template<typename T>
+inline Mat4<T> Mat4<T>::inverse(void) const
+{
+	// »ùÓÚ°éËæ¾ØÕó
+	T blk00 = cols[2][2] * cols[3][3] - cols[3][2] * cols[2][3];
+	T blk02 = cols[1][2] * cols[3][3] - cols[3][2] * cols[1][3];
+	T blk03 = cols[1][2] * cols[2][3] - cols[2][2] * cols[1][3];
+
+	T blk04 = cols[2][1] * cols[3][3] - cols[3][1] * cols[2][3];
+	T blk06 = cols[1][1] * cols[3][3] - cols[3][1] * cols[1][3];
+	T blk07 = cols[1][1] * cols[2][3] - cols[2][1] * cols[1][3];
+
+	T blk08 = cols[2][1] * cols[3][2] - cols[3][1] * cols[2][2];
+	T blk10 = cols[1][1] * cols[3][2] - cols[3][1] * cols[1][2];
+	T blk11 = cols[1][1] * cols[2][2] - cols[2][1] * cols[1][2];
+
+	T blk12 = cols[2][0] * cols[3][3] - cols[3][0] * cols[2][3];
+	T blk14 = cols[1][0] * cols[3][3] - cols[3][0] * cols[1][3];
+	T blk15 = cols[1][0] * cols[2][3] - cols[2][0] * cols[1][3];
+
+	T blk16 = cols[2][0] * cols[3][2] - cols[3][0] * cols[2][2];
+	T blk18 = cols[1][0] * cols[3][2] - cols[3][0] * cols[1][2];
+	T blk19 = cols[1][0] * cols[2][2] - cols[2][0] * cols[1][2];
+
+	T blk20 = cols[2][0] * cols[3][1] - cols[3][0] * cols[2][1];
+	T blk22 = cols[1][0] * cols[3][1] - cols[3][0] * cols[1][1];
+	T blk23 = cols[1][0] * cols[2][1] - cols[2][0] * cols[1][1];
+
+	Vec4<T> fac0(blk00, blk00, blk02, blk03);
+	Vec4<T> fac1(blk04, blk04, blk06, blk07);
+	Vec4<T> fac2(blk08, blk08, blk10, blk11);
+	Vec4<T> fac3(blk12, blk12, blk14, blk15);
+	Vec4<T> fac4(blk16, blk16, blk18, blk19);
+	Vec4<T> fac5(blk20, blk20, blk22, blk23);
+
+	Vec4<T> vec0(cols[1][0], cols[0][0], cols[0][0], cols[0][0]);
+	Vec4<T> vec1(cols[1][1], cols[0][1], cols[0][1], cols[0][1]);
+	Vec4<T> vec2(cols[1][2], cols[0][2], cols[0][2], cols[0][2]);
+	Vec4<T> vec3(cols[1][3], cols[0][3], cols[0][3], cols[0][3]);
+
+	Vec4<T> inv0(vec1 * fac0 - vec2 * fac1 + vec3 * fac2);
+	Vec4<T> inv1(vec0 * fac0 - vec2 * fac3 + vec3 * fac4);
+	Vec4<T> inv2(vec0 * fac1 - vec1 * fac3 + vec3 * fac5);
+	Vec4<T> inv3(vec0 * fac2 - vec1 * fac4 + vec2 * fac5);
+
+	Vec4<T> sign_a(+1, -1, +1, -1);
+	Vec4<T> sign_b(-1, +1, -1, +1);
+
+	Mat4<T> adj = from_cols(inv0 * sign_a, inv1 * sign_b, inv2 * sign_a, inv3 * sign_b);
+	float d = cols[0].dot(adj.get_row(0));
+	for (int i = 0; i < 4; ++i)
+		for (int j = 0; j < 4; ++j)
+			adj(i, j) /= d;
+	return adj;
+
 }
 
 template<typename T>

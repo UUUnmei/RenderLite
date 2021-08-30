@@ -10,7 +10,8 @@
 template<typename T>
 struct Mat4 {
 	// data
-	Vec4<T> cols[4];   // 直到实际用了一次我才意识到这东西是行主序，，，表面上叫col不能改变它实际上是row的事实，呜呜
+	Vec4<T> cols[4];   // 直到实际用了一次我才意识到这东西是行主序，，，表面上叫col不能改变它实际上是row的事实，呜呜 
+						// 破案了，是16个参数那个构造函数的锅。。。
 
 
 	// basic
@@ -50,6 +51,7 @@ struct Mat4 {
 	Vec4<T> get_row(size_t idx);
 	Vec4<T> get_col(size_t idx);
 	Mat4<T> transpose(void) const;
+	Mat4<T> inverse(void) const;
 
 	Mat4<T>& operator*=(const Mat4<T>& rhs) const;
 

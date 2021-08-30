@@ -1,6 +1,6 @@
 // OPENMP 使用 https://openmp.org/wp-content/uploads/openmp-examples-4.5.0.pdf   https://zhuanlan.zhihu.com/p/61857547
 // 然而vs才支持2.0。。。相关说明见 https://devblogs.microsoft.com/cppblog/improved-openmp-support-for-cpp-in-visual-studio/
-//  #include <omp.h>
+// #include <omp.h>
 
 #include "Timer.h"
 #include "Graphics.h"
@@ -272,12 +272,16 @@ void Graphics::DrawTriangle(float angle)
 	};
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	Mat4f mvp =  //Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
-		Transform3::rotate_y(angle) *
-		Transform3::scale(3 / 4.0f, 1.0f, 1.0f) 
-		//* Transform3::translate(2.0f,0.0f,0.0f) * Transform3::rotate_y(angle)
+	//Mat4f mvp =  //Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
+	//	Transform3::rotate_y(angle) *
+	//	Transform3::scale(3 / 4.0f, 1.0f, 1.0f) 
+	//	//* Transform3::translate(2.0f,0.0f,0.0f) * Transform3::rotate_y(angle)
+	//	* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
+	//	* Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
+	Mat4f mvp = Transform3::persp(Math::deg2rad(45), 1, 0.1, 100)
 		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
-		* Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
+		* Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+		* Transform3::rotate_y(angle) * Transform3::rotate_z(angle);
 
 
 	int tri_n = sizeof(vertex_indices) / sizeof(int) / 3;
@@ -299,9 +303,9 @@ void Graphics::DrawTriangle(float angle)
 		//v3 = ((v3.to_vec4() * mvp).homogenize() * vp).to_vec3();
 
 		// 整一个w的倒数，为了透视矫正
-		auto vv1 = v1.to_vec4() * mvp;
-		auto vv2 = v2.to_vec4() * mvp;
-		auto vv3 = v3.to_vec4() * mvp;
+		auto vv1 = mvp * v1.to_vec4();
+		auto vv2 = mvp * v2.to_vec4();
+		auto vv3 = mvp * v3.to_vec4();
 
 		// cvv 裁剪  整个放弃超过cvv的三角形
 		if (!check_cvv_clip(vv1)
@@ -311,9 +315,9 @@ void Graphics::DrawTriangle(float angle)
 
 		float rhws[] = { 1.0f / vv1.w, 1.0f / vv2.w, 1.0f / vv3.w };
 		// 齐次化 & 视口变换
-		v1 = (vv1.homogenize() * vp).to_vec3();
-		v2 = (vv2.homogenize() * vp).to_vec3();
-		v3 = (vv3.homogenize() * vp).to_vec3();
+		v1 = (vp * vv1.homogenize()).to_vec3();
+		v2 = (vp * vv2.homogenize()).to_vec3();
+		v3 = (vp * vv3.homogenize()).to_vec3();
 
 		if (mode == Graphics::RenderMode::WIREFRAME) {
 			auto c = Math::vec_to_color(Vec3f(0, 0, 0));
@@ -436,52 +440,56 @@ void Graphics::draw_object(Object& obj)
 	static Timer timer;
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	//Mat4f mvp =  //Transform3::rotate_z(angle) * Transform3::rotate_x(angle) * 
-	//	Transform3::rotate_y(timer.Peek()) *
-	//	Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
-	//	* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0))
-	//	* Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
-	Mat4f mv = Transform3::rotate_y(timer.Peek()) *
-		Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
-		* Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0));
+	static Mat4f v = Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0));
+
+	Mat4f mv = v 
+		* Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+		* Transform3::rotate_y(timer.Peek());
+
 	static Mat4f p = Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
 
 	int tri_n = obj.indices.size() / 3;
+
 	for (int k = 0; k < tri_n; ++k) {
 		// 取一个三角形
 		Vec3f v1 = obj.vertices[obj.indices[3 * k]];
 		Vec3f v2 = obj.vertices[obj.indices[3 * k + 1]];
 		Vec3f v3 = obj.vertices[obj.indices[3 * k + 2]];
 
-			// 整一个w的倒数，为了透视矫正
-		//auto vv1 = v1.to_vec4() * mvp;
-		//auto vv2 = v2.to_vec4() * mvp;
-		//auto vv3 = v3.to_vec4() * mvp;
-		auto vv1 = v1.to_vec4() * mv;
-		auto vv2 = v2.to_vec4() * mv;
-		auto vv3 = v3.to_vec4() * mv;
+
+		auto vv1 = mv * v1.to_vec4();
+		auto vv2 = mv * v2.to_vec4();
+		auto vv3 = mv * v3.to_vec4();
 
 		// 保存一下viewspace中的坐标
 		Vec3f viewspace[] = { vv1.to_vec3(), vv2.to_vec3(), vv3.to_vec3() };
 
-		vv1 = vv1 * p;
-		vv2 = vv2 * p;
-		vv3 = vv3 * p;
+		auto mvi = mv.inverse().transpose();
+
+		Vec3f vn[] = {
+			(mvi * obj.normals[obj.indices[3 * k]].to_vec4(0)).to_vec3(),
+			(mvi * obj.normals[obj.indices[3 * k + 1]].to_vec4(0)).to_vec3(),
+			(mvi * obj.normals[obj.indices[3 * k + 2]].to_vec4(0)).to_vec3(),
+		};
+
+		vv1 = p * vv1;
+		vv2 = p * vv2;
+		vv3 = p * vv3;
 
 		// cvv 裁剪  整个放弃超过cvv的三角形
 		if (!check_cvv_clip(vv1)
 			|| !check_cvv_clip(vv2)
 			|| !check_cvv_clip(vv3))
 			continue;
-
+		// 整一个w的倒数，为了透视矫正
 		float rhws[] = { 1.0f / vv1.w, 1.0f / vv2.w, 1.0f / vv3.w };
 		// 齐次化 & 视口变换
-		v1 = (vv1.homogenize() * vp).to_vec3();
-		v2 = (vv2.homogenize() * vp).to_vec3();
-		v3 = (vv3.homogenize() * vp).to_vec3();
+		v1 = (vp * vv1.homogenize()).to_vec3();
+		v2 = (vp * vv2.homogenize()).to_vec3();
+		v3 = (vp * vv3.homogenize()).to_vec3();
 
 		if (mode == Graphics::RenderMode::WIREFRAME) {
-			auto c = Math::vec_to_color(Vec3f(0, 0, 0));
+			auto c = Math::vec_to_color(Vec3f(1, 1, 1));
 			draw_line(v1, v2, c);
 			draw_line(v2, v3, c);
 			draw_line(v3, v1, c);
@@ -523,9 +531,10 @@ void Graphics::draw_object(Object& obj)
 						depthbuffer[j * width + i] = Z;
 
 						// 法线插值
-						Vec3f n = obj.normals[obj.indices[3 * k]] * alpha + 
-							obj.normals[obj.indices[3 * k + 1]] * beta + 
-							obj.normals[obj.indices[3 * k + 2]] * gamma;
+						//Vec3f n = obj.normals[obj.indices[3 * k]] * alpha + 
+						//	obj.normals[obj.indices[3 * k + 1]] * beta + 
+						//	obj.normals[obj.indices[3 * k + 2]] * gamma;
+						Vec3f n = vn[0] * alpha + vn[1] * beta + vn[2] * gamma;
 						n *= inv;
 
 						// 基于法线着色

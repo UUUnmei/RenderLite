@@ -60,7 +60,7 @@ struct Vec3 {
 	bool is_zero(void) const noexcept;
 	std::string to_str(void) const;
 	Vec2<T> to_vec2(void) const;
-	Vec4<T> to_vec4(void) const;
+	Vec4<T> to_vec4(T w = T(1)) const;
 	float length() const;
 	float length_squared() const;
 	Vec3<T> abs() const;

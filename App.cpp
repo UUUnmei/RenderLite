@@ -53,10 +53,11 @@ int App::Go() {
 void App::DoFrame()
 {
 
-	wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(1, 1, 1)));
+	wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(0, 0, 0)));
 
 	for (const auto& p : objects)
 		wnd.Gfx().draw_object(*p);
+	//wnd.Gfx().DrawTriangle(timer.Peek());
 
 	wnd.Gfx().draw();
 
