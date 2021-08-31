@@ -13,7 +13,8 @@ void App::Initial()
 	
 	//objects.emplace_back(std::make_unique<Object>("obj/diablo3_pose.obj"));
 	//objects.emplace_back(std::make_unique<Object>("obj/african_head.obj"));
-	objects.emplace_back(std::make_unique<Object>("obj/spot.obj"));
+	objects.emplace_back(std::make_unique<Object>("obj/spot.obj", "obj/spot_texture.bmp"));
+	//objects.emplace_back(std::make_unique<Object>("obj/rock.obj", "obj/rock_texture.bmp"));
 
 }
 

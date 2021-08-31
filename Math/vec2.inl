@@ -44,12 +44,37 @@ inline T& Vec2<T>::operator[](size_t i)
 }
 
 template<typename T>
+inline Vec2<T> Vec2<T>::operator+(const Vec2<T>& rhs) const noexcept
+{
+	return Vec2<T>(
+		x + rhs.x,
+		y + rhs.y
+		);
+}
+
+template<typename T>
 inline Vec2<T> Vec2<T>::operator-(const Vec2<T>& rhs) const noexcept
 {
 	return Vec2<T>(
 		x - rhs.x,
 		y - rhs.y
 		);
+}
+
+template<typename T>
+inline Vec2<T> Vec2<T>::operator*(T rhs) const
+{
+	return Vec2<T>(
+		x * rhs, y * rhs
+		);
+}
+
+template<typename T>
+inline Vec2<T>& Vec2<T>::operator*=(T rhs)
+{
+	x *= rhs;
+	y *= rhs;
+	return *this;
 }
 
 

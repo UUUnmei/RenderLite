@@ -1,6 +1,6 @@
 // OPENMP 使用 https://openmp.org/wp-content/uploads/openmp-examples-4.5.0.pdf   https://zhuanlan.zhihu.com/p/61857547
 // 然而vs才支持2.0。。。相关说明见 https://devblogs.microsoft.com/cppblog/improved-openmp-support-for-cpp-in-visual-studio/
-// #include <omp.h>
+#include <omp.h>
 
 #include "Timer.h"
 #include "Graphics.h"
@@ -395,6 +395,9 @@ float qpow(float x, int n) {
 }
 
 Vec3f Phong_shading(const Vec3f& _color, const Vec3f& _normal, const Vec3f& _coord) {
+
+
+
 	Vec3f ka = Vec3f(0.005, 0.005, 0.005);
 	Vec3f kd = _color;
 	Vec3f ks = Vec3f(0.7937, 0.7937, 0.7937);
@@ -438,6 +441,57 @@ Vec3f Phong_shading(const Vec3f& _color, const Vec3f& _normal, const Vec3f& _coo
 	return result_color;
 }
 
+Vec3f Phong_shading_with_texture(const Vec3f& _normal, const Vec3f& _coord, const Vec2f& _texcoord, Object& obj) {
+
+	Vec3f tex_color;
+	if (obj.texture) {
+		tex_color = obj.get_tex(_texcoord.x, _texcoord.y);
+	}
+
+	Vec3f ka = Vec3f(0.005, 0.005, 0.005);
+	Vec3f kd = tex_color;
+	Vec3f ks = Vec3f(0.7937, 0.7937, 0.7937);
+
+	struct Light {
+		Vec3f pos;
+		float intensity;
+	};
+
+	static Light l1 = Light{ {20, 20, 20}, 500 };
+	static Light l2 = Light{ {-20, 20, 0}, 500 };
+
+	static std::vector<Light> lights{ l1, l2 };
+	Vec3f amb_light_intensity{ 10, 10, 10 };
+	Vec3f eye_pos{ 0, 0, 10 };
+
+	int p = 150;
+
+	Vec3f color = tex_color;
+	Vec3f point = _coord;
+	Vec3f normal = _normal;
+
+	Vec3f result_color = { 0, 0, 0 };
+	for (auto& light : lights)
+	{
+		float r2 = (light.pos - point).length_squared();
+		Vec3f I = (light.pos - point).normalize();
+		Vec3f V = (eye_pos - point).normalize();
+
+		Vec3f diffuse = kd * (light.intensity / r2) * std::max(0.0f, I.dot(normal));
+		Vec3f specular = ks * (light.intensity / r2) * qpow(std::max(0.0f, normal.dot((I + V).normalize())), p);
+		Vec3f ambient = ka * amb_light_intensity.x;
+
+		result_color +=
+			diffuse
+			+ specular
+			+ ambient;
+
+	}
+
+	return result_color;
+}
+
+
 void Graphics::draw_object(Object& obj)
 {
 	static Timer timer;
@@ -450,12 +504,13 @@ void Graphics::draw_object(Object& obj)
 		* Transform3::scale(1.5f, 1.5f, 1.5f)
 		//* Transform3::rotate_y(Math::deg2rad(150))
 		* Transform3::rotate_y(timer.Peek());
+		//* Transform3::rotate_z(timer.Peek());
 		
 
 	static Mat4f p = Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
 
 	int tri_n = obj.indices.size() / 3;
-
+//#pragma omp parallel for
 	for (int k = 0; k < tri_n; ++k) {
 		// 取一个三角形
 		Vec3f v1 = obj.vertices[obj.indices[3 * k]];
@@ -549,11 +604,18 @@ void Graphics::draw_object(Object& obj)
 							viewspace[2] * gamma;
 						coord *= inv;
 
+						// 纹理坐标
+						Vec2f texcoord = obj.texcoords[obj.indices[3 * k]] * alpha +
+							obj.texcoords[obj.indices[3 * k + 1]] * beta +
+							obj.texcoords[obj.indices[3 * k + 2]] * gamma;
+						texcoord *= inv;
+
 						// 给 Blinn Phong准备个基础色
 						Vec3f color(148.0 / 255, 121.0 / 255, 92.0 / 255);
 
 						// 简易Blinn Phong着色
-						color = Phong_shading(color, n.normalize(), coord);  // ！！ 传的法向量一定要单位化
+						//color = Phong_shading(color, n.normalize(), coord);  // ！！ 传的法向量一定要单位化
+						color = Phong_shading_with_texture(n.normalize(), coord, texcoord, obj);  
 
 						set_pixel_unsafe(i, j, Math::vec_to_color(color));
 					}

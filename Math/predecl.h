@@ -82,6 +82,7 @@ struct Math {
 		return (r << 16) | (g << 8) | b | (255 << 24);
 	}
 
+	
 };
 
 

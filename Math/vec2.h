@@ -25,7 +25,10 @@ struct Vec2 {
 	// operator
 	const T& operator[] (size_t i) const;
 	T& operator[] (size_t i);
+	Vec2<T> operator+(const Vec2<T>& rhs) const noexcept;
 	Vec2<T> operator-(const Vec2<T>& rhs) const noexcept;
+	Vec2<T> operator*(T rhs) const;
+	Vec2<T>& operator*=(T rhs);
 
 	// general
 	std::string to_str(void) const;
