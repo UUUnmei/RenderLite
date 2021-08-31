@@ -36,8 +36,7 @@ int App::Go() {
 		update_fps();
 
 		if (wnd.kbd.KeyIsPressed(VK_SPACE)) {
-			// 切换显示模式，
-			// 在线框模式下，可能由于帧数较高，每帧过短，按下一次空格可能被识别多次，导致切换不成功或者是有闪烁。。。。
+			// 切换显示模式，不是很好使
 			if (wnd.Gfx().mode == Graphics::RenderMode::WIREFRAME)
 				wnd.Gfx().mode = Graphics::RenderMode::FILLEDTRIANGLE;
 			else

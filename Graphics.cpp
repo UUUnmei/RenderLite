@@ -404,12 +404,12 @@ Vec3f Phong_shading(const Vec3f& _color, const Vec3f& _normal, const Vec3f& _coo
 		float intensity;
 	};
 
-	auto l1 = Light{ {20, 20, 20}, 500 };
-	auto l2 = Light{ {-20, 20, 0}, 500 };
+	static Light l1 = Light{ {20, 20, 20}, 500 };
+	static Light l2 = Light{ {-20, 20, 0}, 500 };
 
-	std::vector<Light> lights{ l1, l2 };
+	static std::vector<Light> lights{ l1, l2 };
 	Vec3f amb_light_intensity{ 10, 10, 10 };
-	Vec3f eye_pos{ 0, 0, 5 };
+	Vec3f eye_pos{ 0, 0, 10 };
 
 	int p = 150;
 
@@ -425,10 +425,13 @@ Vec3f Phong_shading(const Vec3f& _color, const Vec3f& _normal, const Vec3f& _coo
 		Vec3f V = (eye_pos - point).normalize();
 
 		Vec3f diffuse = kd * (light.intensity / r2) * std::max(0.0f, I.dot(normal));
-		Vec3f specular = ks * (light.intensity / r2) * qpow(std::max(0.0f, normal.dot((I + V).normalize())), p);
+		Vec3f specular = ks * (light.intensity / r2) * qpow(std::max(0.0f, normal.dot( (I + V).normalize() )), p);
 		Vec3f ambient = ka * amb_light_intensity.x;
 
-		result_color += diffuse + specular + ambient;
+		result_color +=
+			diffuse
+			+ specular
+			+ ambient;
 
 	}
 
@@ -440,11 +443,14 @@ void Graphics::draw_object(Object& obj)
 	static Timer timer;
 
 	static Mat4f vp = Transform3::viewport(width, height);
-	static Mat4f v = Transform3::view(Vec3f(0, 0, 5), Vec3f(0, 0, -1), Vec3f(0, 1, 0));
+	static Mat4f v = Transform3::view(Vec3f(0, 0, 10), Vec3f(0, 0, -1), Vec3f(0, 1, 0));
 
-	Mat4f mv = v 
+	Mat4f mv = v
 		* Transform3::scale(3 / 4.0f, 1.0f, 1.0f)
+		* Transform3::scale(1.5f, 1.5f, 1.5f)
+		//* Transform3::rotate_y(Math::deg2rad(150))
 		* Transform3::rotate_y(timer.Peek());
+		
 
 	static Mat4f p = Transform3::persp(Math::deg2rad(45), 1, 0.1, 100);
 
@@ -464,12 +470,12 @@ void Graphics::draw_object(Object& obj)
 		// 保存一下viewspace中的坐标
 		Vec3f viewspace[] = { vv1.to_vec3(), vv2.to_vec3(), vv3.to_vec3() };
 
-		auto mvi = mv.inverse().transpose();
+		auto mvit = mv.inverse().transpose();
 
 		Vec3f vn[] = {
-			(mvi * obj.normals[obj.indices[3 * k]].to_vec4(0)).to_vec3(),
-			(mvi * obj.normals[obj.indices[3 * k + 1]].to_vec4(0)).to_vec3(),
-			(mvi * obj.normals[obj.indices[3 * k + 2]].to_vec4(0)).to_vec3(),
+			(mvit * obj.normals[obj.indices[3 * k]].to_vec4(0)).to_vec3(),
+			(mvit * obj.normals[obj.indices[3 * k + 1]].to_vec4(0)).to_vec3(),
+			(mvit * obj.normals[obj.indices[3 * k + 2]].to_vec4(0)).to_vec3(),
 		};
 
 		vv1 = p * vv1;
@@ -531,9 +537,6 @@ void Graphics::draw_object(Object& obj)
 						depthbuffer[j * width + i] = Z;
 
 						// 法线插值
-						//Vec3f n = obj.normals[obj.indices[3 * k]] * alpha + 
-						//	obj.normals[obj.indices[3 * k + 1]] * beta + 
-						//	obj.normals[obj.indices[3 * k + 2]] * gamma;
 						Vec3f n = vn[0] * alpha + vn[1] * beta + vn[2] * gamma;
 						n *= inv;
 
@@ -550,7 +553,7 @@ void Graphics::draw_object(Object& obj)
 						Vec3f color(148.0 / 255, 121.0 / 255, 92.0 / 255);
 
 						// 简易Blinn Phong着色
-						color = Phong_shading(color, n, coord);
+						color = Phong_shading(color, n.normalize(), coord);  // ！！ 传的法向量一定要单位化
 
 						set_pixel_unsafe(i, j, Math::vec_to_color(color));
 					}

@@ -73,7 +73,9 @@ struct Math {
 	// 矢量转换整数颜色
 	template<typename T>
 	static uint32_t vec_to_color(const Vec3<T>& color) {
-
+		//uint32_t r = (uint32_t)clamp((int)(color.r * 255.0f), 0, 255);
+		//uint32_t g = (uint32_t)clamp((int)(color.g * 255.0f), 0, 255);
+		//uint32_t b = (uint32_t)clamp((int)(color.b * 255.0f), 0, 255);
 		uint32_t r = std::min((uint32_t)(color.r * 255.0f), 255u);
 		uint32_t g = std::min((uint32_t)(color.g * 255.0f), 255u);
 		uint32_t b = std::min((uint32_t)(color.b * 255.0f), 255u);
