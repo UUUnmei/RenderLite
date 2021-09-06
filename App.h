@@ -19,10 +19,12 @@ public:
 
 private:
 
-	std::vector<std::unique_ptr<Object>> objects;
+	//std::vector<std::unique_ptr<Object>> objects;
+	std::unique_ptr<Object> objects;
 
 	void DoFrame();
 	void update_fps();
+	void handle_kbd_mouse();
 	Window wnd;
 	Timer timer;
 };

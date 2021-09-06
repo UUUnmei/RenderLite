@@ -17,6 +17,7 @@ class Bitmap
 {
 public:
 	virtual ~Bitmap() { if (_bits) delete[]_bits; _bits = NULL; }
+
 	Bitmap(int width, int height) : _w(width), _h(height) {
 		_pitch = width * 4;
 		_bits = new uint8_t[_pitch * _h];

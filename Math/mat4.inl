@@ -19,6 +19,7 @@ inline Mat4<T>::Mat4(
 		   {m02, m12, m22, m32},
 		   {m03, m13, m23, m33}} { }
 
+
 //template<typename T>
 //inline Mat4<T>::Mat4(const Mat4<T>& t) noexcept
 //	:cols{ t.cols[0], t.cols[1], t.cols[2], t.cols[3] } { }
@@ -177,7 +178,7 @@ inline Mat4<T> Mat4<T>::inverse(void) const
 }
 
 template<typename T>
-inline Mat4<T>& Mat4<T>::operator*=(const Mat4<T>& rhs) const
+inline Mat4<T>& Mat4<T>::operator*=(const Mat4<T>& rhs)
 {
 	return *this = *this * rhs;
 }

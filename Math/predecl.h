@@ -82,6 +82,21 @@ struct Math {
 		return (r << 16) | (g << 8) | b | (255 << 24);
 	}
 
+
+	static float qpow(float x, int n) {
+		float res = 1;
+
+		while (n) {
+			if (n & 1) {
+				res *= x;
+			}
+			x *= x;
+			n >>= 1;
+		}
+
+		return res;
+	}
+
 	
 };
 

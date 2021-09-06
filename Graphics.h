@@ -23,6 +23,8 @@ public:
 	Graphics(const Graphics&) = delete;
 	Graphics& operator=(const Graphics&) = delete;
 	~Graphics();
+
+public:
 	void set_pixel(int x, int y, uint32_t color);
 	void set_pixel_unsafe(int x, int y, uint32_t color);
 	void set_pixel(int idx, uint32_t color);

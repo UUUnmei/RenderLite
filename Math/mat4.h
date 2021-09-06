@@ -53,7 +53,7 @@ struct Mat4 {
 	Mat4<T> transpose(void) const;
 	Mat4<T> inverse(void) const;
 
-	Mat4<T>& operator*=(const Mat4<T>& rhs) const;
+	Mat4<T>& operator*=(const Mat4<T>& rhs);
 
 	Mat4<T> operator*(const Mat4<T>& rhs) const;
 	Vec4<T> operator*(const Vec4<T>& rhs) const;

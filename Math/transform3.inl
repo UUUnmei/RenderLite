@@ -115,18 +115,21 @@ inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& d
 	const Vec3<float> t = up.normalize();
 	const Vec3<float> a = g.cross(t).normalize();
 
-	return Mat4<float>(
-		a.x, a.y, a.z, 0,
-		t.x, t.y, t.z, 0,
-		-g.x, -g.y, -g.z, 0,
-		0, 0, 0, 1
-		)
-		* Mat4<float>(
+	return
+		Mat4<float>(
 			1, 0, 0, -eye.x,
 			0, 1, 0, -eye.y,
 			0, 0, 1, -eye.z,
 			0, 0, 0, 1
-		);
+			)
+		* Mat4<float>(
+			a.x, a.y, a.z, 0,
+			t.x, t.y, t.z, 0,
+			-g.x, -g.y, -g.z, 0,
+			0, 0, 0, 1
+			);
+
+		
 }
 
 inline Mat4<float> Transform3::orth(float left_x, float right_x, float top_y, float bottom_y, float near_z, float far_z)

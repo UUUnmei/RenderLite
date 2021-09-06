@@ -6,11 +6,13 @@
 #include <cassert>
 
 Object::Object(const std::string& filepath, const std::string& tex_path)
+	: vertex_shader(nullptr), pixel_shader(nullptr)
 {
 	Assimp::Importer imp;
 	auto model = imp.ReadFile(filepath,
 		aiProcess_Triangulate |
-		aiProcess_JoinIdenticalVertices
+		aiProcess_JoinIdenticalVertices 
+		//aiProcess_GenNormals				// 如果读的文件里没有法线就自动生成
 	);
 
 	const auto pMesh = model->mMeshes[0];
@@ -23,12 +25,12 @@ Object::Object(const std::string& filepath, const std::string& tex_path)
 			pMesh->mVertices[i].y,
 			pMesh->mVertices[i].z
 			);
-		normals.emplace_back(
+		normals.emplace_back(			
 			pMesh->mNormals[i].x,
 			pMesh->mNormals[i].y,
 			pMesh->mNormals[i].z
 			);
-		texcoords.emplace_back(
+		texcoords.emplace_back(				// 有时没有纹理坐标就不要push了，
 			pMesh->mTextureCoords[0][i].x,
 			pMesh->mTextureCoords[0][i].y
 		);

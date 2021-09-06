@@ -166,6 +166,7 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
+    <ClCompile Include="ShaderBase.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinMain.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ShaderBase.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Math\transform3.h" />
     <ClInclude Include="Window.h" />
