@@ -9,10 +9,6 @@
 #include <iostream>
 
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 Graphics::Graphics(HWND hWnd, int width, int height)
 	:width(width), height(height), screen_handle(hWnd), bmp_manager(width, height)
 {
@@ -78,7 +74,7 @@ void Graphics::clear_buffer(uint32_t color)
 	for (int i = 0; i < height; ++i)
 		for (int j = 0; j < width; ++j) {
 			framebuffer[i * width + j] = color;
-			depthbuffer[i * width + j] = -std::numeric_limits<float>::infinity();
+			depthbuffer[i * width + j] = 0;// -std::numeric_limits<float>::infinity();
 		}
 }
 
@@ -281,12 +277,17 @@ void Graphics::draw_object(Object& obj)
 
 		// 视口变换
 		// 由于计算比较简单，直接手动展开（不用viewport那个矩阵了先）
+		// [0,1]^3 --> [0,w]*[0,h]*[0,1]
 		vv1.x = (1.0f + vv1.x) * width * 0.5f;
 		vv1.y = (1.0f - vv1.y) * height * 0.5f;
+		vv1.z = (1.0f + vv1.z) * 0.5f;
 		vv2.x = (1.0f + vv2.x) * width * 0.5f;
 		vv2.y = (1.0f - vv2.y) * height * 0.5f;
+		vv2.z = (1.0f + vv2.z) * 0.5f;
 		vv3.x = (1.0f + vv3.x) * width * 0.5f;
 		vv3.y = (1.0f - vv3.y) * height * 0.5f;
+		vv3.z = (1.0f + vv3.z) * 0.5f;
+		
 
 		Vec3f v_screen[] = {
 			vv1.to_vec3(),
@@ -326,23 +327,25 @@ void Graphics::draw_object(Object& obj)
 				computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
 				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
 					// 各属性插值
+					// 深度测试也可以用1/w代替z
+					float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+
+					// 透视矫正
 					alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
 					float inv = 1.0 / (alpha + beta + gamma);
+					alpha *= inv, beta *= inv, gamma *= inv;
 
-					float Z = alpha * v2f[0].rhw + beta * v2f[1].rhw + gamma * v2f[2].rhw;  // 深度测试可以用1/w代替z
-					
-					
 					if (Z > depthbuffer[j * width + i]) { //深度测试
 						depthbuffer[j * width + i] = Z;
 
 						// 法线插值
-						Vec3f n = (v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma) * inv;
+						Vec3f n = v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma;
 
 						// viewspace中坐标插值
-						Vec3f coord = (v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma) * inv;
+						Vec3f coord = v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
 
 						// 纹理坐标
-						Vec2f texcoord = (v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma) * inv;
+						Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
 
 						// 调用pixelshader
 						V2F param{

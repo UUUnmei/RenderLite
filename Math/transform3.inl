@@ -111,21 +111,39 @@ inline Mat4<float> Transform3::rotate(const Vec3<float>& axis, float rad)
 
 inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& dir, const Vec3<float>& up)
 {
-	const Vec3<float> g = dir.normalize();
-	const Vec3<float> t = up.normalize();
-	const Vec3<float> a = g.cross(t).normalize();
+	//const Vec3<float> g = dir.normalize();
+	//const Vec3<float> t = up.normalize();
+	//const Vec3<float> a = g.cross(t).normalize();
+
+	//return
+	//	Mat4<float>(
+	//		a.x, a.y, a.z, 0,
+	//		t.x, t.y, t.z, 0,
+	//		-g.x, -g.y, -g.z, 0,
+	//		0, 0, 0, 1
+	//		)
+	//	* Mat4<float>(
+	//		1, 0, 0, -eye.x,
+	//		0, 1, 0, -eye.y,
+	//		0, 0, 1, -eye.z,
+	//		0, 0, 0, 1
+	//		);
+
+	const Vec3f w = -dir.normalize();
+	const Vec3f u = up.cross(w).normalize();
+	const Vec3f v = w.cross(u);
 
 	return
 		Mat4<float>(
-			1, 0, 0, -eye.x,
-			0, 1, 0, -eye.y,
-			0, 0, 1, -eye.z,
+			u.x, u.y, u.z, 0,
+			v.x, v.y, v.z, 0,
+			w.x, w.y, w.z, 0,
 			0, 0, 0, 1
 			)
 		* Mat4<float>(
-			a.x, a.y, a.z, 0,
-			t.x, t.y, t.z, 0,
-			-g.x, -g.y, -g.z, 0,
+			1, 0, 0, -eye.x,
+			0, 1, 0, -eye.y,
+			0, 0, 1, -eye.z,
 			0, 0, 0, 1
 			);
 
@@ -173,7 +191,13 @@ inline Mat4<float> Transform3::viewport(int width, int height)
 	return Mat4<float>(
 		width / 2, 0, 0, width / 2,
 		0, -height / 2, 0, height / 2,
-		0, 0, 1, 0,
+		0, 0, 1.0f / 2.0f, 1.0f / 2.0f,
 		0, 0, 0, 1
 		);
+	//return Mat4<float>(
+	//	width / 2, 0, 0, width / 2,
+	//	0, -height / 2, 0, height / 2,
+	//	0, 0, 1, 0,
+	//	0, 0, 0, 1
+	//	);
 }

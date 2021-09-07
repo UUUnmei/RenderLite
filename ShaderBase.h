@@ -27,8 +27,8 @@ struct ShadingContext {
 	Mat4f view;
 	Mat4f projection;
 	// 视口变换矩阵在graphics
-	Mat4f it_model;	// == model.inverse().transpose() // 为了算摄像机空间法线准备
-	Mat4f it_view;
+	//Mat4f it_model;	// == model.inverse().transpose() // 为了算摄像机空间法线准备
+	//Mat4f it_view;
 	//mvp
 	Mat4f mvp;
 	Mat4f mv;

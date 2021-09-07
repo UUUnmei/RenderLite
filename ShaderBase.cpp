@@ -21,5 +21,6 @@ void ShadingContext::set_projection(const Mat4f& m)
 void ShadingContext::gen_mvp(void)
 {
 	mvp = projection * view * model;
+	mv = view * model;
 	it_mv = (view * model).inverse().transpose();
 }
