@@ -12,6 +12,7 @@ struct V2F {
 	Vec3f normal;
 	Vec2f texcoord;
 	float rhw;		// vtx_mvp中w的倒数
+	Vec3f color; // 纹理颜色
 };
 
 // vertex shader 输入参数

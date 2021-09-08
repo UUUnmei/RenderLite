@@ -1,5 +1,6 @@
 #include "App.h"
 #include "Math/Math.h"
+#include "GraphicsDiscriptor.h"
 #include <string>
 #include <iomanip>
 
@@ -10,7 +11,12 @@ App::App()
 void App::Initial()
 {
 	// 设置显示选项
-	wnd.Gfx().mode = Graphics::RenderMode::FILLEDTRIANGLE;
+	GraphicsDiscriptor disc;
+	disc.display = RenderMode::FilledTriangle;
+	disc.texwrap = TextureWrapMode::Repeat;
+	disc.sample = SampleMode::Bilinear;
+
+	wnd.Gfx().disc = disc;
 	
 	//导入模型
 	//objects.emplace_back(std::make_unique<Object>("obj/diablo3_pose.obj"));
@@ -21,16 +27,16 @@ void App::Initial()
 	//objects.emplace_back(std::make_unique<Object>("obj/spot.obj", "obj/spot_texture.bmp"));
 	//objects.emplace_back(std::make_unique<Object>("obj/rock.obj", "obj/rock_texture.bmp"));
 	
-	objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture.bmp");
-	//objects = std::make_unique<Object>("obj/helmet.obj");
+	objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture256.bmp");
+	//objects = std::make_unique<Object>("obj/helmet.obj", "obj/helmet_basecolor256.bmp");
 
 
 	// 设定初始的变换矩阵
-	//objects->transform.set_model( // 初步来看需要遵循zyx的顺序 ！否则效果不对，，，
-	//	//Transform3::rotate_z(Math::deg2rad(45)) *
-	//	//Transform3::rotate_y(Math::deg2rad(45)) * 
-	//	Transform3::rotate_x(Math::deg2rad(90))
-	//);
+	objects->transform.set_model( // 初步来看需要遵循zyx的顺序 ！否则效果不对，，，
+		//Transform3::rotate_z(Math::deg2rad(45)) *
+		//Transform3::rotate_y(Math::deg2rad(45)) * 
+		Transform3::rotate_x(Math::deg2rad(0))
+	);
 	objects->transform.set_view(
 		camera.get_view()
 	);
@@ -51,7 +57,7 @@ void App::Initial()
 		
 		return out.vtx_mvp;
 	};
-	objects->pixel_shader = [&](const V2F& in) -> Vec3f {
+	objects->pixel_shader = [](const V2F& in) -> Vec3f {
 		//Vec2f uv = in.texcoord * 10;
 		//float x = std::floor(uv.u);
 		//float y = std::floor(uv.v);
@@ -60,13 +66,7 @@ void App::Initial()
 		//return Vec3f(frac, frac, frac) * 2;
 
 
-		Vec3f tex_color;
-		if (objects->texture) {
-			tex_color = objects->get_tex(in.texcoord.x, in.texcoord.y);
-		}
-		else {
-			tex_color = Vec3f(148.0 / 255, 121.0 / 255, 92.0 / 255);
-		}
+		Vec3f tex_color = in.color;
 
 		Vec3f ka = Vec3f(0.005, 0.005, 0.005);
 		Vec3f kd = tex_color;
@@ -163,10 +163,10 @@ void App::handle_kbd_mouse()
 {
 	if (wnd.kbd.KeyIsPressed(VK_SPACE)) {
 		// 切换显示模式，不是很好使
-		if (wnd.Gfx().mode == Graphics::RenderMode::WIREFRAME)
-			wnd.Gfx().mode = Graphics::RenderMode::FILLEDTRIANGLE;
+		if (wnd.Gfx().disc.display == RenderMode::WireFrame)
+			wnd.Gfx().disc.display = RenderMode::FilledTriangle;
 		else
-			wnd.Gfx().mode = Graphics::RenderMode::WIREFRAME;
+			wnd.Gfx().disc.display = RenderMode::WireFrame;
 	}
 	else if (wnd.kbd.KeyIsPressed(VK_RETURN)) {
 		// 按回车键截图

@@ -23,6 +23,7 @@ struct Vec2 {
 	~Vec2() = default;
 
 	// operator
+	bool operator<(const Vec2<T>& rhs) const noexcept;
 	const T& operator[] (size_t i) const;
 	T& operator[] (size_t i);
 	Vec2<T> operator+(const Vec2<T>& rhs) const noexcept;

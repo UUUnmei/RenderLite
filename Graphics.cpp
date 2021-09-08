@@ -295,7 +295,7 @@ void Graphics::draw_object(Object& obj)
 			vv3.to_vec3()
 		};
 
-		if (mode == Graphics::RenderMode::WIREFRAME) {
+		if (disc.display == RenderMode::WireFrame) {
 			auto c = Math::vec_to_color(Vec3f(1, 1, 1));
 			draw_line(v_screen[0], v_screen[1], c);
 			draw_line(v_screen[1], v_screen[2], c);
@@ -347,13 +347,16 @@ void Graphics::draw_object(Object& obj)
 						// 纹理坐标
 						Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
 
+						
+	
 						// 调用pixelshader
 						V2F param{
 							coord,
 							{0,0,0,0},
 							n.normalize(),
 							texcoord,
-							0
+							0,
+							obj.get_tex(texcoord.u, texcoord.v, disc.sample, disc.texwrap)
 						};
 						Vec3f color = obj.pixel_shader(param);
 						set_pixel_unsafe(i, j, Math::vec_to_color(color));

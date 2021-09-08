@@ -118,6 +118,9 @@
     <ClInclude Include="OrbitCamera.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="GraphicsDiscriptor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RenderLite.rc">

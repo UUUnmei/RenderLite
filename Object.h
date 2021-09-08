@@ -2,6 +2,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "GraphicsDiscriptor.h"
 #include "ShaderBase.h"
 #include "Math/Math.h"
 #include <vector>
@@ -30,7 +31,7 @@ public:
 	Object(const Object&) = delete;  // ²»¿É¸´ÖÆ
 	Object& operator=(const Object&) = delete;
 
-	Vec3f get_tex(float u, float v);
+	Vec3f get_tex(float u, float v, SampleMode m, TextureWrapMode w);
 };
 
 

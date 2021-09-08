@@ -8,15 +8,13 @@
 #include <memory>
 
 #include "Object.h"
+#include "GraphicsDiscriptor.h"
+
 
 class Graphics {
 public:
-	enum class RenderMode {
-		WIREFRAME,	// 线框模式
-		FILLEDTRIANGLE,		//填充三角形
-	};
 
-	RenderMode mode;
+	GraphicsDiscriptor disc;
 
 public:
 	Graphics(HWND hWnd, int width, int height);

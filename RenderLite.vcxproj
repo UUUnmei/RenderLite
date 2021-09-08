@@ -178,6 +178,7 @@
     <ClInclude Include="ChiliWin.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="GraphicsDiscriptor.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Math\mat4.h" />
     <ClInclude Include="Math\Math.h" />

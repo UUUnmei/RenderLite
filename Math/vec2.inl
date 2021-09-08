@@ -30,6 +30,13 @@ inline Vec2<T>& Vec2<T>::operator=(const Vec2& t) noexcept
 }
 
 template<typename T>
+inline bool Vec2<T>::operator<(const Vec2<T>& rhs) const noexcept
+{
+	return x < rhs.x
+		&& y < rhs.y;
+}
+
+template<typename T>
 inline const T& Vec2<T>::operator[](size_t i) const
 {
 	// assert(i < 3);
