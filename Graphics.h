@@ -9,12 +9,11 @@
 
 #include "Object.h"
 #include "GraphicsDiscriptor.h"
+#include "Keyboard.h"
 
 
 class Graphics {
-public:
 
-	GraphicsDiscriptor disc;
 
 public:
 	Graphics(HWND hWnd, int width, int height);
@@ -36,11 +35,12 @@ public:
 	void draw_object(Object& obj);
 
 	void save_as_bmp_file(const char* filename = "output.bmp");
+	void set_discriptor(GraphicsDiscriptor& d);
 
-
+	void update_by(Keyboard& k);
 
 private:
-	
+	GraphicsDiscriptor disc;
 	Bitmap bmp_manager;
 
 	int width;
@@ -51,6 +51,7 @@ private:
 	HBITMAP screen_ob;		// ÀÏµÄ BITMAP
 	uint32_t* framebuffer;		// frame buffer
 	std::unique_ptr<float[]> depthbuffer; 
+
 
 };
 

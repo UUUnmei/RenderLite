@@ -30,6 +30,8 @@ struct Vec2 {
 	Vec2<T> operator-(const Vec2<T>& rhs) const noexcept;
 	Vec2<T> operator*(T rhs) const;
 	Vec2<T>& operator*=(T rhs);
+	Vec2<T>& operator/=(T rhs);
+	Vec2<T>& operator+=(const Vec2<T>& rhs);
 
 	// general
 	std::string to_str(void) const;

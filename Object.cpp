@@ -115,7 +115,7 @@ Vec3f Object::get_tex(float u, float v, SampleMode m, TextureWrapMode w)
 		uint32_t c01 = texture->GetPixel(x2, y1);
 		uint32_t c10 = texture->GetPixel(x1, y2);
 		uint32_t c11 = texture->GetPixel(x2, y2);
-		ret = Math::BilinearInterp(c00, c01, c10, c11, dx, dy);
+		ret = Math::BilinearInterp(c00, c01, c10, c11, dx, dy); //也是抄来的，，，移到了math中
 
 	}
 	return color_from_uint(ret);

@@ -12,30 +12,22 @@ void App::Initial()
 {
 	// 设置显示选项
 	GraphicsDiscriptor disc;
-	disc.display = RenderMode::FilledTriangle;
 	disc.texwrap = TextureWrapMode::Repeat;
-	disc.sample = SampleMode::Bilinear;
-
-	wnd.Gfx().disc = disc;
+	//disc.sample = SampleMode::Bilinear;
+	//disc.MSAA4x = true;
+	wnd.Gfx().set_discriptor(disc);
 	
 	//导入模型
-	//objects.emplace_back(std::make_unique<Object>("obj/diablo3_pose.obj"));
-	//objects.emplace_back(std::make_unique<Object>("obj/african_head.obj"));
-	//objects.emplace_back(std::make_unique<Object>("obj/bunny/bunny.obj"));
-	//objects.emplace_back(std::make_unique<Object>("obj/mori_knob/testObj.obj"));  // 主要是下标1、4的mesh
-	//objects.emplace_back(std::make_unique<Object>("obj/bun_zipper.ply"));
-	//objects.emplace_back(std::make_unique<Object>("obj/spot.obj", "obj/spot_texture.bmp"));
-	//objects.emplace_back(std::make_unique<Object>("obj/rock.obj", "obj/rock_texture.bmp"));
-	
-	objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture256.bmp");
-	//objects = std::make_unique<Object>("obj/helmet.obj", "obj/helmet_basecolor256.bmp");
+
+	//objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture256.bmp");
+	objects = std::make_unique<Object>("obj/helmet.obj", "obj/helmet_basecolor.bmp");
 
 
 	// 设定初始的变换矩阵
 	objects->transform.set_model( // 初步来看需要遵循zyx的顺序 ！否则效果不对，，，
 		//Transform3::rotate_z(Math::deg2rad(45)) *
 		//Transform3::rotate_y(Math::deg2rad(45)) * 
-		Transform3::rotate_x(Math::deg2rad(0))
+		Transform3::rotate_x(Math::deg2rad(90))
 	);
 	objects->transform.set_view(
 		camera.get_view()
@@ -139,6 +131,7 @@ int App::Go() {
 void App::DoFrame()
 {
 	wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(0.0823, 0.8901, 0.9450)));
+	//wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(0, 0, 0)));
 
 	//for (const auto& p : objects)
 	//	wnd.Gfx().draw_object(*p);
@@ -161,17 +154,8 @@ void App::update_fps() {
 
 void App::handle_kbd_mouse()
 {
-	if (wnd.kbd.KeyIsPressed(VK_SPACE)) {
-		// 切换显示模式，不是很好使
-		if (wnd.Gfx().disc.display == RenderMode::WireFrame)
-			wnd.Gfx().disc.display = RenderMode::FilledTriangle;
-		else
-			wnd.Gfx().disc.display = RenderMode::WireFrame;
-	}
-	else if (wnd.kbd.KeyIsPressed(VK_RETURN)) {
-		// 按回车键截图
-		wnd.Gfx().save_as_bmp_file();
-	}
+
+	wnd.Gfx().update_by(wnd.kbd);
 
 	// 鼠标控制摄像机
 	camera.update(wnd.mouse, wnd.kbd);

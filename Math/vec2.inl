@@ -84,6 +84,22 @@ inline Vec2<T>& Vec2<T>::operator*=(T rhs)
 	return *this;
 }
 
+template<typename T>
+inline Vec2<T>& Vec2<T>::operator/=(T rhs)
+{
+	x /= rhs;
+	y /= rhs;
+	return *this;
+}
+
+template<typename T>
+inline Vec2<T>& Vec2<T>::operator+=(const Vec2<T>& rhs)
+{
+	x += rhs.x;
+	y += rhs.y;
+	return *this;
+}
+
 
 template<typename T>
 inline std::string Vec2<T>::to_str() const

@@ -72,10 +72,23 @@ void Graphics::set_pixel(int idx, uint32_t color)
 void Graphics::clear_buffer(uint32_t color)
 {
 	for (int i = 0; i < height; ++i)
-		for (int j = 0; j < width; ++j) {
+		for (int j = 0; j < width; ++j) 
 			framebuffer[i * width + j] = color;
-			depthbuffer[i * width + j] = 0;// -std::numeric_limits<float>::infinity();
-		}
+
+	if (disc.MSAA4x) {
+		for (int i = 0; i < height; ++i)
+			for (int j = 0; j < width; ++j) {
+				int idx = i * width + j;
+				for (int k = 0; k < 4; ++k)
+					depthbuffer[k + idx * 4] = 0;
+			}
+	}
+	else {
+		for (int i = 0; i < height; ++i)
+			for (int j = 0; j < width; ++j)
+				depthbuffer[i * width + j] = 0; // -std::numeric_limits<float>::infinity();
+	}
+				
 }
 
 void Graphics::draw(void)
@@ -319,37 +332,90 @@ void Graphics::draw_object(Object& obj)
 		miny = std::max(0, miny);
 		maxy = std::min(height - 1, maxy + 1);	
 
-		for (int j = miny; j < maxy; ++j) {
-			for (int i = minx; i <= maxx; ++i) {
-				float x = i + 0.5;
-				float y = j + 0.5;
-				float alpha, beta, gamma;
-				computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
-				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
-					// 各属性插值
-					// 深度测试也可以用1/w代替z
-					float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+		if (disc.MSAA4x == false) {
+			for (int j = miny; j <= maxy; ++j) {
+				for (int i = minx; i <= maxx; ++i) {
+					float x = i + 0.5;
+					float y = j + 0.5;
+					float alpha, beta, gamma;
+					computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
+					if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+						// 各属性插值
+						// 深度测试也可以用1/w代替z
+						float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+						// 透视矫正
+						alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
+						float inv = 1.0 / (alpha + beta + gamma);
+						alpha *= inv, beta *= inv, gamma *= inv;
+						//深度测试
+						if (Z > depthbuffer[j * width + i]) { 
+							depthbuffer[j * width + i] = Z;
+							// 法线插值
+							Vec3f n = v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma;
+							// viewspace中坐标插值
+							Vec3f coord = v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
+							// 纹理坐标
+							Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
+							// 调用pixelshader
+							V2F param{
+								coord,
+								{0,0,0,0},
+								n.normalize(),
+								texcoord,
+								0,
+								obj.get_tex(texcoord.u, texcoord.v, disc.sample, disc.texwrap)
+							};
+							Vec3f color = obj.pixel_shader(param);
+							set_pixel_unsafe(i, j, Math::vec_to_color(color));
+						}
+					}
+				}
+			}
+		}
+		else {
+			// 开启 MSAA 4x
+			for (int j = miny; j <= maxy; ++j) {
+				for (int i = minx; i <= maxx; ++i) {
+					int idx = j * width + i;
+					int cnt = 0, cnt2 = 0;
+					float d = 0.5;
+					Vec3f n, coord, color;
+					Vec2f texcoord;
+					// multi sampling
+					for (int a = 0; a < 2; ++a) {
+						for (int b = 0; b < 2; ++b) {
+							float x = i + a * 0.5 + 0.25;
+							float y = j + b * 0.5 + 0.25;
+							float alpha, beta, gamma;
+							computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
+							if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {
+								cnt++;
+								float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+								// 透视矫正
+								alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
+								float inv = 1.0 / (alpha + beta + gamma);
+								alpha *= inv, beta *= inv, gamma *= inv;
 
-					// 透视矫正
-					alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
-					float inv = 1.0 / (alpha + beta + gamma);
-					alpha *= inv, beta *= inv, gamma *= inv;
-
-					if (Z > depthbuffer[j * width + i]) { //深度测试
-						depthbuffer[j * width + i] = Z;
-
-						// 法线插值
-						Vec3f n = v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma;
-
-						// viewspace中坐标插值
-						Vec3f coord = v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
-
-						// 纹理坐标
-						Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
-
+								int t = idx * 4 + a * 2 + b;
+								if (Z > depthbuffer[t]) {
+									depthbuffer[t] = Z;
+									cnt2++;
+									// 法线插值
+									n += (v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma).normalize();
+									// viewspace中坐标插值
+									coord += v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
+									// 纹理坐标
+									texcoord += v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;											
+								}
+							}
+						}
+					}
+					if (cnt2 > 0) {
 						
-	
-						// 调用pixelshader
+						coord /= (float)cnt2;
+						n /= (float)cnt2;
+						texcoord /= (float)cnt2;
+
 						V2F param{
 							coord,
 							{0,0,0,0},
@@ -358,12 +424,13 @@ void Graphics::draw_object(Object& obj)
 							0,
 							obj.get_tex(texcoord.u, texcoord.v, disc.sample, disc.texwrap)
 						};
-						Vec3f color = obj.pixel_shader(param);
+						Vec3f color = obj.pixel_shader(param);// *cnt / 4.0 + framebuffer[idx] * (1 - cnt / 4.0);
 						set_pixel_unsafe(i, j, Math::vec_to_color(color));
 					}
 				}
 			}
 		}
+		
 	}
 }
 
@@ -374,4 +441,28 @@ void Graphics::save_as_bmp_file(const char* filename)
 		for (int i = 0; i < width; ++i)
 			bmp_manager.SetPixel(i, j, framebuffer[m++]);
 	bmp_manager.SaveFile(filename);
+}
+
+void Graphics::set_discriptor(GraphicsDiscriptor& d)
+{
+	disc = d;
+	if (d.MSAA4x == true) {
+		depthbuffer.reset();
+		depthbuffer = std::make_unique<float[]>(4 * width * height);
+	}
+}
+
+void Graphics::update_by(Keyboard& k)
+{
+	if (k.KeyIsPressed(VK_SPACE)) {
+		// 切换显示模式，不是很好使
+		if (disc.display == RenderMode::WireFrame)
+			disc.display = RenderMode::FilledTriangle;
+		else
+			disc.display = RenderMode::WireFrame;
+	}
+	else if (k.KeyIsPressed(VK_RETURN)) {
+		// 按回车键截图
+		save_as_bmp_file();
+	}
 }
