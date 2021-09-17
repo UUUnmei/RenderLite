@@ -115,3 +115,15 @@ inline T Vec2<T>::cross_z(const Vec2<T>& rhs) const
 {
 	return x * rhs.y - y * rhs.x;
 }
+
+template<typename T>
+inline float Vec2<T>::length() const
+{
+	return std::sqrt(x * x + y * y);
+}
+
+template<typename T>
+inline float Vec2<T>::length_squared() const
+{
+	return x * x + y * y;
+}

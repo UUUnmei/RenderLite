@@ -53,6 +53,9 @@
     <ClCompile Include="OrbitCamera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Draw2d.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -119,6 +122,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="GraphicsDiscriptor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Draw2d.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

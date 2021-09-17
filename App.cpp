@@ -19,15 +19,15 @@ void App::Initial()
 	
 	//导入模型
 
-	//objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture256.bmp");
-	objects = std::make_unique<Object>("obj/helmet.obj", "obj/helmet_basecolor.bmp");
+	objects = std::make_unique<Object>("obj/spot.obj", "obj/spot_texture.bmp");
+	//objects = std::make_unique<Object>("obj/helmet.obj", "obj/helmet_basecolor.bmp");
 
 
 	// 设定初始的变换矩阵
 	objects->transform.set_model( // 初步来看需要遵循zyx的顺序 ！否则效果不对，，，
 		//Transform3::rotate_z(Math::deg2rad(45)) *
 		//Transform3::rotate_y(Math::deg2rad(45)) * 
-		Transform3::rotate_x(Math::deg2rad(90))
+		Transform3::rotate_x(Math::deg2rad(0))
 	);
 	objects->transform.set_view(
 		camera.get_view()

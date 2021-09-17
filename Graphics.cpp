@@ -466,3 +466,173 @@ void Graphics::update_by(Keyboard& k)
 		save_as_bmp_file();
 	}
 }
+
+void Graphics::line_DDA(int x0, int y0, int x1, int y1)
+{
+	int dx = x1 - x0, dy = y1 - y0;
+	float xf = x0, yf = y0;
+	int eps = (abs(dx) > abs(dy) ? abs(dx) : abs(dy));
+	float xi = (float)dx / eps;
+	float yi = (float)dy / eps;
+	for (int i = 0; i <= eps; ++i) {
+		set_pixel(int(xf + 0.5f), int(yf + 0.5f), Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+		xf += xi;
+		yf += yi;
+	}
+
+}
+
+void Graphics::line_Bresenham(int x0, int y0, int x1, int y1)
+{
+
+	int dx = x1 - x0, dy = y1 - y0;
+	int ux = dx > 0 ? 1 : -1;
+	int uy = dy > 0 ? 1 : -1;
+	dx = abs(dx), dy = abs(dy);
+	if (dx > dy) {
+		int d = dx - 2 * dy;
+		int up = 2 * dx - 2 * dy;
+		int down = -2 * dy;
+		for (int x = x0, y = y0, i = 0; i <= dx; ++i) {
+			set_pixel(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+			x += ux;
+			if (d < 0) {
+				// 中点在线下方，选上面的点
+				y += uy;
+				d += up;
+			}
+			else {
+				d += down;
+			}
+		}
+	}
+	else {
+		// y为长轴
+		int d = dy - 2 * dx;
+		int up = 2 * dy - 2 * dx;
+		int down = -2 * dx;
+		for (int x = x0, y = y0, i = 0; i <= dy; ++i) {
+			set_pixel(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+			y += uy;
+			if (d < 0) {
+				x += ux;
+				d += up;
+			}
+			else {
+				d += down;
+			}
+		}
+	}
+	
+}
+
+void Graphics::line_Improved_Bresenham(int x0, int y0, int x1, int y1)
+{
+	int dx = x1 - x0, dy = y1 - y0;
+	int ux = dx > 0 ? 1 : -1;
+	int uy = dy > 0 ? 1 : -1;
+	dx = abs(dx), dy = abs(dy);
+	if (dx > dy) {
+		int e = -dx;
+		for (int x = x0, y = y0, i = 0; i <= dx; ++i) {
+			set_pixel(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+			x += ux;
+			e += 2 * dy;
+			if (e > 0) {
+				y += uy;
+				e -= 2 * dx;
+			}
+		}
+	}
+	else {
+		// y为长轴
+		int e = -dy;
+		for (int x = x0, y = y0, i = 0; i <= dy; ++i) {
+			set_pixel(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+			y += uy;
+			e += 2 * dx;
+			if (e > 0) {
+				x += ux;
+				e -= 2 * dy;
+			}
+		}
+	}
+}
+
+void Graphics::circle(int ox, int oy, int r)
+{
+	auto circle_point = [&](int x, int y, uint32_t color) {
+		// 需要调整 原本是以原点为圆心
+		set_pixel(x + ox, y + oy, color);
+		set_pixel(x + ox, -y + oy, color);
+		set_pixel(-x + ox, y + oy, color);
+		set_pixel(-x + ox, -y + oy, color);
+		set_pixel(y + ox, x + oy, color);
+		set_pixel(y + ox, -x + oy, color);
+		set_pixel(-y + ox, x + oy, color);
+		set_pixel(-y + ox, -x + oy, color);
+	};
+
+	int x = 0, y = r, d = 1 - r;
+	while (x <= y) {
+		circle_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+		if (d < 0) {
+			d += 2 * x + 3;
+		}
+		else {
+			d += 2 * x - 2 * y + 5;
+			y--;
+		}
+		x++;
+	}
+}
+
+void Graphics::ellipse(int ox, int oy, int a, int b)
+{
+	auto ellipse_point = [&](int x, int y, uint32_t color) {
+		// 需要调整
+		set_pixel(x + ox, y + oy, color);
+		set_pixel(x + ox, -y + oy, color);
+		set_pixel(-x + ox, y + oy, color);
+		set_pixel(-x + ox, -y + oy, color);
+	};
+	int x = 0, y = b;
+	ellipse_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	
+	// 上
+	float d1 = b * b + a * a * (-b + 0.25); 
+	a *= a;
+	b *= b;	
+	while (b * (x + 1) < a * (y - 0.5)) {
+		if (d1 <= 0) {
+			d1 += b * (2 * x + 3);
+			x++;
+		}
+		else {
+			d1 += b * (2 * x + 3) + a * (-2 * y + 2);
+			x++;
+			y--;
+		}
+		ellipse_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	}
+	// 下
+	float d2 = b * (x + 0.5) * (x + 0.5) + a * (y - 1) * (y - 1) - a * b;
+	while (y > 0) {
+		if (d2 <= 0) {
+			d2 += b * (2 * x + 2) + a * (-2 * y + 3);
+			x++;
+			y--;
+		}
+		else {
+			d2 += a * (-2 * y + 3);
+			y--;
+		}
+		ellipse_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	}
+}
+
+// 双纽线
+void Graphics::lemniscate(int ox, int oy, int a)
+{
+
+}

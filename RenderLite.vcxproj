@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Draw2d.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Keyboard.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="bmp.h" />
     <ClInclude Include="ChiliWin.h" />
+    <ClInclude Include="Draw2d.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="GraphicsDiscriptor.h" />

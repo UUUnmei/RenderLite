@@ -30,14 +30,22 @@ public:
 	void draw_line(const Vec2i& start, const Vec2i& end, uint32_t color);
 	template<typename T>
 	void draw_line(const Vec3<T>& start, const Vec3<T>& end, uint32_t color);
-	void DrawTriangle(float angle);
+	//void DrawTriangle(float angle);
 	//void DrawCube(float angle, float x, float y);
 	void draw_object(Object& obj);
 
 	void save_as_bmp_file(const char* filename = "output.bmp");
 	void set_discriptor(GraphicsDiscriptor& d);
-
 	void update_by(Keyboard& k);
+
+public: //2d
+	void line_DDA(int x0, int y0, int x1, int y1);
+	void line_Bresenham(int x0, int y0, int x1, int y1);
+	void line_Improved_Bresenham(int x0, int y0, int x1, int y1);
+	// 以下均基于Bresenham中点法
+	void circle(int ox, int oy, int r);
+	void ellipse(int ox, int oy, int a, int b); // a为半长轴，b为半短轴，暂时默认长轴在x轴上
+	void lemniscate(int ox, int oy, int a);  // 同样，长轴在x轴上
 
 private:
 	GraphicsDiscriptor disc;

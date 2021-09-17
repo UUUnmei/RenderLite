@@ -36,6 +36,8 @@ struct Vec2 {
 	// general
 	std::string to_str(void) const;
 	T cross_z(const Vec2<T>& rhs) const;
+	float length() const;
+	float length_squared() const;
 };
 
 using Vec2i = Vec2<int>;

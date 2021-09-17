@@ -102,6 +102,7 @@ Vec3f Object::get_tex(float u, float v, SampleMode m, TextureWrapMode w)
 		//ret = Math::vec_to_color(c);
 
 		// 抄来的，，比上面的快很多
+		// skywind3000 RenderHelp
 		// 基本想法是把浮点数乘个倍数转为整数计算
 		int32_t fx = (int32_t)(x * 0x10000);
 		int32_t fy = (int32_t)(y * 0x10000);
