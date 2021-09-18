@@ -23,6 +23,7 @@ private:
 	void show_draw_line();
 	void show_draw_circle(); // 比较友好的交互式画圆
 	void show_draw_ellipse(); 
+	void show_draw_lemniscate(); // 双纽线
 
 	Window wnd;
 

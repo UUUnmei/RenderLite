@@ -36,7 +36,9 @@ void Draw2d::DoFrame()
 	// »­Ô²
 	//show_draw_circle();
 	// ÍÖÔ²
-	show_draw_ellipse();
+	//show_draw_ellipse();
+	// Ë«Å¦Ïß
+	show_draw_lemniscate();
 
 
 	wnd.Gfx().draw();
@@ -132,4 +134,25 @@ void Draw2d::show_draw_ellipse()
 		wnd.Gfx().ellipse(p1.x, p1.y, a, b);
 	}
 
+}
+
+void Draw2d::show_draw_lemniscate()
+{
+	if (q.size() == 1) {
+		wnd.Gfx().clear_buffer(Math::vec_to_color(Vec3f(1.0f, 1.0f, 1.0f)));
+		auto p1 = q[0];
+		auto p2 = Vec2i(wnd.mouse.GetPos());
+		int a = (p1 - p2).length();
+		wnd.Gfx().lemniscate(p1.x, p1.y, a);
+	}
+
+	if (q.size() >= 2) {
+		auto p1 = q.front();
+		q.pop_front();
+		auto p2 = q.front();
+		q.pop_front();
+
+		int a = (p1 - p2).length();
+		wnd.Gfx().lemniscate(p1.x, p1.y, a);
+	}
 }

@@ -616,7 +616,8 @@ void Graphics::ellipse(int ox, int oy, int a, int b)
 		ellipse_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
 	}
 	// 下
-	float d2 = b * (x + 0.5) * (x + 0.5) + a * (y - 1) * (y - 1) - a * b;
+	//float d2 = b * (x + 0.5) * (x + 0.5) + a * (y - 1) * (y - 1) - a * b; //椭圆较大时，两侧会变竖直的
+	float d2 = b * 0.25 * x + a * (1 - 2 * y);  // 更好用
 	while (y > 0) {
 		if (d2 <= 0) {
 			d2 += b * (2 * x + 2) + a * (-2 * y + 3);
@@ -634,5 +635,95 @@ void Graphics::ellipse(int ox, int oy, int a, int b)
 // 双纽线
 void Graphics::lemniscate(int ox, int oy, int a)
 {
+	auto lemniscate_point = [&](int x, int y, uint32_t color) {
+		// 需要调整
+		set_pixel(x + ox, y + oy, color);
+		set_pixel(x + ox, -y + oy, color);
+		set_pixel(-x + ox, y + oy, color);
+		set_pixel(-x + ox, -y + oy, color);
+	};
+	
+	// F(x, y) = (x^2 + y^2)^2 - 2 * a^2 * (x^2 - y^2)
+
+	int x = 0, y = 0;
+	int aa = a * a;
+	lemniscate_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+
+	// 0 < k < 1 段
+	float d1 = 1.5625 - 1.5 * aa; // F(1, 0.5)
+	while (
+		// 法向量 x分量 <= 0
+		std::pow(x + 1, 3) + (y + 0.5) * (y + 0.5) * (x + 1) - aa * (x + 1) < 0
+		) {
+		if (d1 <= 0) {
+			x++;
+			y++;
+			// 赞美 Mathematica ！
+			// 不过其实到这个程度的话我觉得还真不如直接算这个点的误差了，这迭代也太麻烦了
+			// F(x + 2, y + 1.5) - F(x + 1, y + 0.5)
+			d1 += 37.5f - 2 * aa + 45 * x - 4 * aa * x + 22 * x * x
+				+ 4 * x * x * x + 35 * y + 4 * aa * y + 20 * x * y 
+				+ 4 * x * x * y + 18 * y * y + 4 * x * y * y + 4 * y * y * y;
+		}
+		else {
+			x++;
+			// F(x + 2, y + 0.5) - F(x + 1, y + 0.5)
+			d1 += 16.5f - 6 * aa + 29 * x - 4 * aa * x + 18 * x * x
+				+ 4 * x * x * x + 6 * y + 4 * x * y + 6 * y * y + 4 * x * y * y;
+		}
+		lemniscate_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	}
+
+	auto square = [](float x) {
+		return x * x;
+	};
+	auto cube = [](float x) {
+		return x * x * x;
+	};
+
+	// -1 < k < 0 段
+	float d2 = square(square(x + 1) + square(y - 0.5)) - 2 * aa * (square(x + 1) - square(y - 0.5));
+	while (
+		// 法向量y分量大于x分量
+		cube(x + 1) + square(y - 0.5) * (x + 1) - aa * (x + 1)
+		< cube(y - 0.5) + square(x + 1) * (y - 0.5) + aa * (y - 0.5)
+		) {
+		if (d2 <= 0) {
+			x++;
+			// F(x + 2, y - 0.5) - F(x + 1, y - 0.5)
+			d2 += 16.5f - 6 * aa + 29 * x - 4 * aa * x + 18 * x * x
+				+ 4 * x * x * x - 6 * y - 4 * x * y + 6 * y * y + 4 * x * y * y;
+		}
+		else {
+			x++;
+			y--;
+			// F(x + 2, y - 1.5) - F(x + 1, y - 0.5)
+			d2 += 37.5f - 2 * aa + 45 * x - 4 * aa * x + 22 * x * x
+				+ 4 * x * x * x - 35 * y - 4 * aa * y - 20 * x * y
+				- 4 * x * x * y + 18 * y * y + 4 * x * y * y - 4 * y * y * y;
+		}
+		lemniscate_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	}
+
+	// k < -1 段
+	// y为最大位移方向
+	float d3 = square(square(x + 0.5) + square(y - 1)) - 2 * aa * (square(x + 0.5) - square(y - 1));
+	while (y > 0) {
+		if (d3 <= 0) {
+			y--;
+			x++;
+			// F(x + 1.5, y - 2) - F(x + 0.5, y - 1)
+			d3 += 37.5f + 2 * aa + 35 * x - 4 * aa * x - 18 * x * x
+				+ 4 * x * x * x - 45 * y - 4 * aa * y - 20 * x * y
+				- 4 * x * x * y + 22 * y * y + 4 * x * y * y - 4 * y * y * y;
+		}
+		else {
+			y--;
+			// F(x + 0.5, y - 2) - F(x + 0.5, y - 1)
+			d3 += 16.5f + 6 * aa + 6 * x - 29 * y - 4 * aa * y - 4 * x * y
+				- 4 * x * x * y + 18 * y * y - 4 * y * y * y;
+		}
+		lemniscate_point(x, y, Math::vec_to_color(Vec3f(0.0f, 0.0f, 0.0f)));
+	}
 
 }
