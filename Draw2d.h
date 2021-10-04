@@ -25,6 +25,11 @@ private:
 	void show_draw_ellipse(); 
 	void show_draw_lemniscate(); // 双纽线
 
+
+	// 实现多边形裁剪
+	void draw_base_polygon(std::vector<Vec2i>&, uint32_t color);  
+	void Sutherland_Hodgeman(std::vector<Vec2i> &polygon, std::vector<Vec2i> &rect);
+
 	Window wnd;
 
 	std::deque<Vec2i> q;

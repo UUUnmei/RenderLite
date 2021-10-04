@@ -2,7 +2,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
+#include <algorithm>
 #include <cassert>
 
 Object::Object(const std::string& filepath, const std::string& tex_path)
@@ -11,43 +11,61 @@ Object::Object(const std::string& filepath, const std::string& tex_path)
 	Assimp::Importer imp;
 	auto model = imp.ReadFile(filepath,
 		aiProcess_Triangulate |
-		aiProcess_JoinIdenticalVertices 
-		//aiProcess_GenNormals				// 如果读的文件里没有法线就自动生成
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_GenNormals				// 如果读的文件里没有法线就自动生成
 	);
 
-	const auto pMesh = model->mMeshes[0];
-	vertices.reserve(pMesh->mNumVertices);
-	normals.reserve(pMesh->mNumVertices);
-	texcoords.reserve(pMesh->mNumVertices);
-	for (unsigned i = 0; i < pMesh->mNumVertices; ++i) {
-		vertices.emplace_back(
-			pMesh->mVertices[i].x,
-			pMesh->mVertices[i].y,
-			pMesh->mVertices[i].z
+	assert(model != nullptr);
+	int vertices_cnt = 0;
+	for (int j = 0; j < model->mNumMeshes; ++j) {
+		const auto pMesh = model->mMeshes[j];
+		for (unsigned i = 0; i < pMesh->mNumVertices; ++i) {
+			vertices.emplace_back(
+				pMesh->mVertices[i].x,
+				pMesh->mVertices[i].y,
+				pMesh->mVertices[i].z
 			);
-		normals.emplace_back(			
-			pMesh->mNormals[i].x,
-			pMesh->mNormals[i].y,
-			pMesh->mNormals[i].z
+			normals.emplace_back(
+				pMesh->mNormals[i].x,
+				pMesh->mNormals[i].y,
+				pMesh->mNormals[i].z
 			);
-		texcoords.emplace_back(				// 有时没有纹理坐标就不要push了，
-			pMesh->mTextureCoords[0][i].x,
-			pMesh->mTextureCoords[0][i].y
-		);
-	}
-	indices.reserve(pMesh->mNumFaces * 3);
-	for (unsigned i = 0; i < pMesh->mNumFaces; ++i) {
-		const auto& face = pMesh->mFaces[i];
-		assert(face.mNumIndices == 3);
-		indices.emplace_back(face.mIndices[0]);
-		indices.emplace_back(face.mIndices[1]);
-		indices.emplace_back(face.mIndices[2]);
+		}
+		if (pMesh->HasTextureCoords(0)) {
+			// 如果有纹理坐标
+			for (unsigned i = 0; i < pMesh->mNumVertices; ++i) {
+				texcoords.emplace_back(				
+					pMesh->mTextureCoords[0][i].x,
+					pMesh->mTextureCoords[0][i].y
+				);
+			}
+		}
+		else {
+			for (unsigned i = 0; i < pMesh->mNumVertices; ++i) {
+				texcoords.emplace_back(				
+					Vec2f(0, 0)
+				);
+			}
+		}
+
+		for (unsigned i = 0; i < pMesh->mNumFaces; ++i) {
+			const auto& face = pMesh->mFaces[i];
+			assert(face.mNumIndices == 3);
+
+			indices.emplace_back(face.mIndices[0] + vertices_cnt);
+			indices.emplace_back(face.mIndices[1] + vertices_cnt);
+			indices.emplace_back(face.mIndices[2] + vertices_cnt);
+		}
+		 // !它每个mesh的索引好像从0开始的，要手动更新。。不然后面一起用的时候就不对了
+		// 或者更简单粗暴点就是每个mesh对应一个object吧。。。
+		vertices_cnt += pMesh->mNumVertices;
 	}
 
 	texture = nullptr;
 	if (tex_path.empty() == false) {
 		texture = std::make_unique<Bitmap>(tex_path.c_str());
 	}
+
 }
 
 inline static Vec3f color_from_uint(uint32_t color) {

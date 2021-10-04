@@ -10,8 +10,8 @@ int WINAPI WinMain(   // winapi stdcall宏 指定编译器处理参数的方式，包括存的位置
 	int nCmdShow)
 {
 	try {
-		//App{}.Go();
-		Draw2d{}.Go();
+		App{}.Go();
+		//Draw2d{}.Go();
 	}
 	catch (const std::exception& e) {
 		MessageBox(nullptr, e.what(), "Standard Exception", MB_OK | MB_ICONEXCLAMATION);
