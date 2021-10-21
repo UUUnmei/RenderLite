@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include "ShaderBase.h"
 #include <iostream>
+#include <cassert>
 
 
 Graphics::Graphics(HWND hWnd, int width, int height)
@@ -205,12 +206,22 @@ void computeBarycentric2D(float x, float y, const Vec3f* v,
 }
 
 
-bool check_cvv_clip(const Vec4f& v) {
+bool check_cvv_clip_any(const Vec4f& v) {
+	float r = fabs(v.w), l = -r;
+	return v.x >= l || v.x <= r
+		|| v.y >= l || v.y <= r
+		|| v.z >= l || v.z <= r;
+}
+
+bool check_cvv_clip_all(const Vec4f& v) {
 	float r = fabs(v.w), l = -r;
 	return v.x >= l && v.x <= r
 		&& v.y >= l && v.y <= r
 		&& v.z >= l && v.z <= r;
 }
+
+
+
 
 // 背面剔除，在mvp后和屏幕空间中都可以
 // 这里在的屏幕空间中处理
@@ -226,26 +237,83 @@ bool backface_culling(const Vec3f& v1, const Vec3f& v2, const Vec3f& v3) {
 		v2.x * v3.y - v2.y * v3.x +
 		v3.x * v1.y - v3.y * v1.x;
 	return -a > 0;  // 逆时针时对于上面计算的要取反"Setting dir to CCW indicates that the sign of a should be reversed prior to use"
+	// 关于取负的新理解，在2d部分多边形裁剪中提到的，由于是在屏幕空间坐标进行的，而屏幕坐标y轴向下，导致叉乘变号
 }
 
 
-// 黑白网格
-Vec3f gen_grid(Vec2f uv) {
-	uv *= 10;
-	float x = std::floor(uv.u);
-	float y = std::floor(uv.v);
-	float c = (x + y) / 2;
-	float frac = c - (int)c;
-	return Vec3f(frac, frac, frac) * 2;
+const std::vector<Vec4f> clip_planes{
+	{0,0,1,1}, //near
+	{0,0,-1,1}, //far
+	{1,0,0,1}, //left
+	{0,1,0,1},  //top
+	{-1,0,0,1}, //right
+	{0,-1,0,1}  //bottom 
+};
+
+
+bool inside_test(const Vec4f& plane, const Vec4f& point) {
+	return plane.dot(point) < EPSILON;
 }
 
-// 黑白同心圆（大概..) 
-Vec3f gen_noise(Vec2f uv) {
-	
-	uv = uv - Vec2f(0.5f, 0.5f);
-	float c = std::sqrt(uv.u * uv.u + uv.v * uv.v) * 10;
-	float frac = c - (int)c;
-	return Vec3f(frac, frac, frac);
+V2F lerp_v2f(const V2F& p1, const V2F& p2, float t) {
+	V2F ret;
+	ret.vtx_model = Math::lerp(p1.vtx_model, p2.vtx_model, t);
+	ret.vtx_view = Math::lerp(p1.vtx_view, p2.vtx_view, t);
+	ret.vtx_mvp = Math::lerp(p1.vtx_mvp, p2.vtx_mvp, t);
+	ret.normal = Math::lerp(p1.normal, p2.normal, t);
+	ret.texcoord = Math::lerp(p1.texcoord, p2.texcoord, t);
+	// 不能在这插值rhw，不线性
+	return ret;
+}
+
+V2F get_intersection(const Vec4f& plane, const V2F& p1, const V2F& p2) {
+	float d1 = plane.dot(p1.vtx_mvp);
+	float d2 = plane.dot(p2.vtx_mvp);
+	float t = d1 / (d1 - d2);
+	return lerp_v2f(p1, p2, t);
+}
+
+
+// 齐次空间裁剪 
+// https://zhuanlan.zhihu.com/p/162190576 其中还有相关参考
+// https://github.com/SilverClawko/SoftRender/blob/newVersion/Clip.cpp
+// 也类似2d部分的 Sutherland_Hodgeman多边形裁剪
+std::vector<V2F> homogeneous_clip(const V2F& v1, const V2F& v2, const V2F& v3) {
+	std::vector<V2F> ret{ v1, v2, v3 };
+
+	// 加个判断，如果实际不需裁剪的话就返回
+	// 不然下面循环里完全是pushback分配内存，性能暴跌
+	if (check_cvv_clip_all(v1.vtx_mvp) && check_cvv_clip_all(v2.vtx_mvp) && check_cvv_clip_all(v3.vtx_mvp))
+		return ret;
+
+	for (int k = 0; k < clip_planes.size(); ++k) {
+		std::vector<V2F> cur;
+		for (int i = 0; i < ret.size(); ++i) {
+			int j = (i + 1) % ret.size();
+
+			bool f1 = inside_test(clip_planes[k], ret[i].vtx_mvp); //为真表示该点在要保留的范围
+			bool f2 = inside_test(clip_planes[k], ret[j].vtx_mvp);  
+
+			if (f1 && f2) {
+				// 两点都可见 要第二个点
+				cur.push_back(ret[j]);
+			}
+			else if (f1) {
+				// 只有第一个点可见， 要与边界的交点
+				cur.push_back(get_intersection(clip_planes[k], ret[i], ret[j]));
+			}
+			else if (f2) {
+				// 只有第二个点可见，要交点和第二个点
+				cur.push_back(get_intersection(clip_planes[k], ret[i], ret[j]));
+				cur.push_back(ret[j]);
+			}
+			else {
+				// 都不可见，弃之
+			}
+		}
+		ret = cur;
+	}
+	return ret;
 }
 
 // shader版
@@ -254,7 +322,7 @@ void Graphics::draw_object(Object& obj)
 
 	int tri_n = obj.indices.size() / 3;
 
-//#pragma omp parallel for
+	//#pragma omp parallel for
 	for (int k = 0; k < tri_n; ++k) {
 		// 取一个三角形
 		Vertex v1{
@@ -275,164 +343,336 @@ void Graphics::draw_object(Object& obj)
 		V2F v2f[3];
 
 		// 调用vertex_shader
-		Vec4f vv1 = obj.vertex_shader(v1, obj.transform, v2f[0]);
-		Vec4f vv2 = obj.vertex_shader(v2, obj.transform, v2f[1]);
-		Vec4f vv3 = obj.vertex_shader(v3, obj.transform, v2f[2]);
+		obj.vertex_shader(v1, obj.transform, v2f[0]);
+		obj.vertex_shader(v2, obj.transform, v2f[1]);
+		obj.vertex_shader(v3, obj.transform, v2f[2]);
 
-		// cvv 裁剪  整个放弃超过cvv的三角形
-		if (!check_cvv_clip(vv1) || !check_cvv_clip(vv2) || !check_cvv_clip(vv3))
+
+		// cvv 裁剪 
+		// 之前是只要有一个顶点不在就剔除，
+		// 现在为了配合齐次裁剪，只有完全不在的才剔除
+		// 脑补一下魔方，cvv是最里面那个立方体，这一步只会裁掉位于魔方顶点的8个位置，剩下 27 - 8 = 19个都留着
+		if (!check_cvv_clip_any(v2f[0].vtx_mvp) && !check_cvv_clip_any(v2f[1].vtx_mvp) && !check_cvv_clip_any(v2f[2].vtx_mvp))
 			continue;
 
-		// 齐次化
-		vv1 = vv1.homogenize();
-		vv2 = vv2.homogenize();
-		vv3 = vv3.homogenize();
+		// 齐次裁剪 用mvp后的坐标
+		std::vector<V2F> cliped_vtx = homogeneous_clip(v2f[0], v2f[1], v2f[2]);
+		//std::vector<V2F> cliped_vtx = { v2f[0], v2f[1], v2f[2] };
 
-		// 视口变换
-		// 由于计算比较简单，直接手动展开（不用viewport那个矩阵了先）
-		// [0,1]^3 --> [0,w]*[0,h]*[0,1]
-		vv1.x = (1.0f + vv1.x) * width * 0.5f;
-		vv1.y = (1.0f - vv1.y) * height * 0.5f;
-		vv1.z = (1.0f + vv1.z) * 0.5f;
-		vv2.x = (1.0f + vv2.x) * width * 0.5f;
-		vv2.y = (1.0f - vv2.y) * height * 0.5f;
-		vv2.z = (1.0f + vv2.z) * 0.5f;
-		vv3.x = (1.0f + vv3.x) * width * 0.5f;
-		vv3.y = (1.0f - vv3.y) * height * 0.5f;
-		vv3.z = (1.0f + vv3.z) * 0.5f;
-		
-
-		Vec3f v_screen[] = {
-			vv1.to_vec3(),
-			vv2.to_vec3(),
-			vv3.to_vec3()
-		};
-
-		if (disc.display == RenderMode::WireFrame) {
-			auto c = Math::vec_to_color(Vec3f(1, 1, 1));
-			draw_line(v_screen[0], v_screen[1], c);
-			draw_line(v_screen[1], v_screen[2], c);
-			draw_line(v_screen[2], v_screen[0], c);
-			continue;
+		for (V2F& x : cliped_vtx) {
+			// 求屏幕坐标
+			x.vtx_wnd = x.vtx_mvp;
+			x.rhw = 1.0f / x.vtx_mvp.w;  // 为了插值进行预处理
+			auto& vv = x.vtx_wnd;
+			// 齐次化
+			vv = vv.homogenize();
+			// 视口变换
+			vv.x = (1.0f + vv.x) * width * 0.5f;
+			vv.y = (1.0f - vv.y) * height * 0.5f;
+			vv.z = (1.0f + vv.z) * 0.5f;
+			
 		}
 
-		// mode == Graphics::RenderMode::FILLEDTRIANGLE
+		int sz = cliped_vtx.size() - 2;
+		for (int z = 0; z < sz; ++z) {
+			// 取裁剪后的一个三角形
+			V2F vf1 = cliped_vtx[0];   // 注意顺序
+			V2F vf2 = cliped_vtx[z + 1];
+			V2F vf3 = cliped_vtx[z + 2];
+			Vec3f v_screen[] = {
+				vf1.vtx_wnd.to_vec3(),
+				vf2.vtx_wnd.to_vec3(),
+				vf3.vtx_wnd.to_vec3()
+			};
 
-		// 背面剔除， 认为顺时针排列为正面
-		// 若为背面，则忽略
-		if (!backface_culling(v_screen[0], v_screen[1], v_screen[2])) 
-			continue;
-
-		int minx = std::floor(std::min({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
-		int maxx = std::ceil(std::max({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
-		int miny = std::floor(std::min({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
-		int maxy = std::ceil(std::max({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
-		minx = std::max(0, minx - 1);
-		maxx = std::min(width - 1, maxx + 1);
-		miny = std::max(0, miny);
-		maxy = std::min(height - 1, maxy + 1);	
-
-		if (disc.MSAA4x == false) {
-			for (int j = miny; j <= maxy; ++j) {
-				for (int i = minx; i <= maxx; ++i) {
-					float x = i + 0.5;
-					float y = j + 0.5;
-					float alpha, beta, gamma;
-					computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
-					if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
-						// 各属性插值
-						// 深度测试也可以用1/w代替z
-						float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
-						// 透视矫正
-						alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
-						float inv = 1.0 / (alpha + beta + gamma);
-						alpha *= inv, beta *= inv, gamma *= inv;
-						//深度测试
-						if (Z > depthbuffer[j * width + i]) { 
-							depthbuffer[j * width + i] = Z;
-							// 法线插值
-							Vec3f n = v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma;
-							// viewspace中坐标插值
-							Vec3f coord = v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
-							// 纹理坐标
-							Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
-							// 调用pixelshader
-							V2F param{
-								coord,
-								{0,0,0,0},
-								n.normalize(),
-								texcoord,
-								0,
-								obj.get_tex(texcoord.u, texcoord.v, disc.sample, disc.texwrap)
-							};
-							Vec3f color = obj.pixel_shader(param);
-							set_pixel_unsafe(i, j, Math::vec_to_color(color));
-						}
-					}
-				}
+			if (disc.display == RenderMode::WireFrame) {
+				auto c = Math::vec_to_color(Vec3f(1, 1, 1));
+				draw_line(v_screen[0], v_screen[1], c);
+				draw_line(v_screen[1], v_screen[2], c);
+				draw_line(v_screen[2], v_screen[0], c);
+				continue;
 			}
-		}
-		else {
-			// 开启 MSAA 4x
-			for (int j = miny; j <= maxy; ++j) {
-				for (int i = minx; i <= maxx; ++i) {
-					int idx = j * width + i;
-					int cnt = 0, cnt2 = 0;
-					float d = 0.5;
-					Vec3f n, coord, color;
-					Vec2f texcoord;
-					// multi sampling
-					for (int a = 0; a < 2; ++a) {
-						for (int b = 0; b < 2; ++b) {
-							float x = i + a * 0.5 + 0.25;
-							float y = j + b * 0.5 + 0.25;
-							float alpha, beta, gamma;
-							computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
-							if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {
-								cnt++;
-								float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
-								// 透视矫正
-								alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
-								float inv = 1.0 / (alpha + beta + gamma);
-								alpha *= inv, beta *= inv, gamma *= inv;
 
-								int t = idx * 4 + a * 2 + b;
-								if (Z > depthbuffer[t]) {
-									depthbuffer[t] = Z;
-									cnt2++;
-									// 法线插值
-									n += (v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma).normalize();
-									// viewspace中坐标插值
-									coord += v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
-									// 纹理坐标
-									texcoord += v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;											
-								}
+			// mode == Graphics::RenderMode::FILLEDTRIANGLE
+
+			if ((disc.fc_mode == FaceCullMode::Back && !backface_culling(v_screen[0], v_screen[1], v_screen[2]))
+				|| (disc.fc_mode == FaceCullMode::Front && backface_culling(v_screen[0], v_screen[1], v_screen[2])))
+				continue;
+
+
+			int minx = std::floor(std::min({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
+			int maxx = std::ceil(std::max({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
+			int miny = std::floor(std::min({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
+			int maxy = std::ceil(std::max({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
+			minx = std::max(0, minx - 1);
+			maxx = std::min(width - 1, maxx + 1);
+			miny = std::max(0, miny);
+			maxy = std::min(height - 1, maxy + 1);
+
+			if (disc.MSAA4x == false) {
+				for (int j = miny; j <= maxy; ++j) {
+					for (int i = minx; i <= maxx; ++i) {
+						float x = i + 0.5;
+						float y = j + 0.5;
+						float alpha, beta, gamma;
+						computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
+						if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+							// 各属性插值
+							// 深度测试也可以用1/w代替z
+							float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+							// 透视矫正
+							alpha *= vf1.rhw, beta *= vf2.rhw, gamma *= vf3.rhw;
+							float inv = 1.0 / (alpha + beta + gamma);
+							alpha *= inv, beta *= inv, gamma *= inv;
+							//深度测试
+							if (Z >= depthbuffer[j * width + i]) {
+								depthbuffer[j * width + i] = Z;
+								// 法线插值
+								Vec3f n = vf1.normal * alpha + vf2.normal * beta + vf3.normal * gamma;
+								// viewspace中坐标插值
+								Vec3f coord = vf1.vtx_view * alpha + vf2.vtx_view * beta + vf3.vtx_view * gamma;
+								// 纹理坐标
+								Vec2f texcoord = vf1.texcoord * alpha + vf2.texcoord * beta + vf3.texcoord * gamma;
+
+
+								Vec3f wrd = vf1.vtx_model * alpha + vf2.vtx_model * beta + vf3.vtx_model * gamma;
+								wrd = wrd.normalize();
+								// 调用pixelshader
+								V2F param{
+									wrd,
+									coord,
+									{0,0,0,0},
+									{0,0,0,0},
+									n.normalize(),
+									texcoord,
+									0,
+									obj.type == 0 ? obj.get_tex(texcoord.u, texcoord.v) : obj.get_tex(wrd.x, wrd.y, wrd.z)
+								};
+								Vec3f color = obj.pixel_shader(param);
+								set_pixel_unsafe(i, j, Math::vec_to_color(color));
 							}
 						}
 					}
-					if (cnt2 > 0) {
-						
-						coord /= (float)cnt2;
-						n /= (float)cnt2;
-						texcoord /= (float)cnt2;
-
-						V2F param{
-							coord,
-							{0,0,0,0},
-							n.normalize(),
-							texcoord,
-							0,
-							obj.get_tex(texcoord.u, texcoord.v, disc.sample, disc.texwrap)
-						};
-						Vec3f color = obj.pixel_shader(param);// *cnt / 4.0 + framebuffer[idx] * (1 - cnt / 4.0);
-						set_pixel_unsafe(i, j, Math::vec_to_color(color));
-					}
 				}
 			}
+
 		}
+
+
 		
+
+
 	}
 }
+
+
+
+//// shader版
+//void Graphics::draw_object(Object& obj)
+//{
+//
+//	int tri_n = obj.indices.size() / 3;
+//
+////#pragma omp parallel for
+//	for (int k = 0; k < tri_n; ++k) {
+//		// 取一个三角形
+//		Vertex v1{
+//			obj.vertices[obj.indices[3 * k]],
+//			obj.normals[obj.indices[3 * k]],
+//			obj.texcoords[obj.indices[3 * k]]
+//		};
+//		Vertex v2{
+//			obj.vertices[obj.indices[3 * k + 1]],
+//			obj.normals[obj.indices[3 * k + 1]],
+//			obj.texcoords[obj.indices[3 * k + 1]]
+//		};
+//		Vertex v3{
+//			obj.vertices[obj.indices[3 * k + 2]],
+//			obj.normals[obj.indices[3 * k + 2]],
+//			obj.texcoords[obj.indices[3 * k + 2]]
+//		};
+//		V2F v2f[3];
+//
+//		// 调用vertex_shader
+//		Vec4f vv1 = obj.vertex_shader(v1, obj.transform, v2f[0]);
+//		Vec4f vv2 = obj.vertex_shader(v2, obj.transform, v2f[1]);
+//		Vec4f vv3 = obj.vertex_shader(v3, obj.transform, v2f[2]);
+//
+//
+//		// cvv 裁剪  整个放弃超过cvv的三角形
+//		if (!check_cvv_clip(vv1) || !check_cvv_clip(vv2) || !check_cvv_clip(vv3))
+//			continue;
+//
+//		// TODO: 齐次裁剪
+//		//std::vector<V2F> cliped_vtx = homogeneous_clip();
+//		//std::vector<V2F> cliped_vtx = { v2f[0], v2f[1], v2f[2] };
+//	https://zhuanlan.zhihu.com/p/162190576
+//
+//
+//
+//
+//		// 齐次化
+//		vv1 = vv1.homogenize();
+//		vv2 = vv2.homogenize();
+//		vv3 = vv3.homogenize();
+//
+//		// 视口变换
+//		// 由于计算比较简单，直接手动展开（不用viewport那个矩阵了先）
+//		// [-1,1]^3 --> [0,w]*[0,h]*[0,1]
+//		vv1.x = (1.0f + vv1.x) * width * 0.5f;
+//		vv1.y = (1.0f - vv1.y) * height * 0.5f;
+//		vv1.z = (1.0f + vv1.z) * 0.5f;
+//		vv2.x = (1.0f + vv2.x) * width * 0.5f;
+//		vv2.y = (1.0f - vv2.y) * height * 0.5f;
+//		vv2.z = (1.0f + vv2.z) * 0.5f;
+//		vv3.x = (1.0f + vv3.x) * width * 0.5f;
+//		vv3.y = (1.0f - vv3.y) * height * 0.5f;
+//		vv3.z = (1.0f + vv3.z) * 0.5f;
+//
+//
+//		Vec3f v_screen[] = {
+//			vv1.to_vec3(),
+//			vv2.to_vec3(),
+//			vv3.to_vec3()
+//		};
+//
+//		if (disc.display == RenderMode::WireFrame) {
+//			auto c = Math::vec_to_color(Vec3f(1, 1, 1));
+//			draw_line(v_screen[0], v_screen[1], c);
+//			draw_line(v_screen[1], v_screen[2], c);
+//			draw_line(v_screen[2], v_screen[0], c);
+//			continue;
+//		}
+//
+//		// mode == Graphics::RenderMode::FILLEDTRIANGLE
+//
+//		// 背面剔除， 认为顺时针排列为正面
+//		// 若为背面，则忽略
+//		if ((disc.fc_mode == FaceCullMode::Back && !backface_culling(v_screen[0], v_screen[1], v_screen[2]))
+//			|| (disc.fc_mode == FaceCullMode::Front && backface_culling(v_screen[0], v_screen[1], v_screen[2])))
+//			continue;
+//
+//		int minx = std::floor(std::min({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
+//		int maxx = std::ceil(std::max({ v_screen[0].x, v_screen[1].x ,v_screen[2].x }));
+//		int miny = std::floor(std::min({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
+//		int maxy = std::ceil(std::max({ v_screen[0].y, v_screen[1].y ,v_screen[2].y }));
+//		minx = std::max(0, minx - 1);
+//		maxx = std::min(width - 1, maxx + 1);
+//		miny = std::max(0, miny);
+//		maxy = std::min(height - 1, maxy + 1);	
+//
+//		if (disc.MSAA4x == false) {
+//			for (int j = miny; j <= maxy; ++j) {
+//				for (int i = minx; i <= maxx; ++i) {
+//					float x = i + 0.5;
+//					float y = j + 0.5;
+//					float alpha, beta, gamma;
+//					computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
+//					if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {  // 直接用重心坐标
+//						// 各属性插值
+//						// 深度测试也可以用1/w代替z
+//						float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+//						// 透视矫正
+//						alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
+//						float inv = 1.0 / (alpha + beta + gamma);
+//						alpha *= inv, beta *= inv, gamma *= inv;
+//						//深度测试
+//						if (Z >= depthbuffer[j * width + i]) { 
+//							depthbuffer[j * width + i] = Z;
+//							// 法线插值
+//							Vec3f n = v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma;
+//							// viewspace中坐标插值
+//							Vec3f coord = v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
+//							// 纹理坐标
+//							Vec2f texcoord = v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;
+//							
+//
+//							Vec3f wrd = v2f[0].vtx_model * alpha + v2f[1].vtx_model * beta + v2f[2].vtx_model * gamma;
+//							wrd = wrd.normalize();
+//							// 调用pixelshader
+//							V2F param{
+//								wrd,
+//								coord,
+//								{0,0,0,0},
+//								{0,0,0,0},
+//								n.normalize(),
+//								texcoord,
+//								0,
+//								obj.type == 0 ? obj.get_tex(texcoord.u, texcoord.v) : obj.get_tex(wrd.x, wrd.y, wrd.z)
+//							};
+//							Vec3f color = obj.pixel_shader(param);
+//							set_pixel_unsafe(i, j, Math::vec_to_color(color));
+//						}
+//					}
+//				}
+//			}
+//		}
+//		else {
+//			//// 开启 MSAA 4x
+//			//for (int j = miny; j <= maxy; ++j) {
+//			//	for (int i = minx; i <= maxx; ++i) {
+//			//		int idx = j * width + i;
+//			//		int cnt = 0, cnt2 = 0;
+//			//		float d = 0.5;
+//			//		Vec3f n, coord, color, wrd;
+//			//		Vec2f texcoord;
+//			//		// multi sampling
+//			//		for (int a = 0; a < 2; ++a) {
+//			//			for (int b = 0; b < 2; ++b) {
+//			//				float x = i + a * 0.5 + 0.25;
+//			//				float y = j + b * 0.5 + 0.25;
+//			//				float alpha, beta, gamma;
+//			//				computeBarycentric2D(x, y, v_screen, alpha, beta, gamma);
+//			//				if (alpha > -EPSILON && beta > -EPSILON && gamma > -EPSILON) {
+//			//					cnt++;
+//			//					float Z = alpha * v_screen[0].z + beta * v_screen[1].z + gamma * v_screen[2].z;
+//			//					// 透视矫正
+//			//					alpha *= v2f[0].rhw, beta *= v2f[1].rhw, gamma *= v2f[2].rhw;
+//			//					float inv = 1.0 / (alpha + beta + gamma);
+//			//					alpha *= inv, beta *= inv, gamma *= inv;
+//
+//			//					int t = idx * 4 + a * 2 + b;
+//			//					if (Z > depthbuffer[t]) {
+//			//						depthbuffer[t] = Z;
+//			//						cnt2++;
+//			//						// 法线插值
+//			//						n += (v2f[0].normal * alpha + v2f[1].normal * beta + v2f[2].normal * gamma).normalize();
+//			//						// viewspace中坐标插值
+//			//						coord += v2f[0].vtx_view * alpha + v2f[1].vtx_view * beta + v2f[2].vtx_view * gamma;
+//			//						// 纹理坐标
+//			//						texcoord += v2f[0].texcoord * alpha + v2f[1].texcoord * beta + v2f[2].texcoord * gamma;		
+//
+//			//						wrd = v2f[0].vtx_world * alpha + v2f[1].vtx_world * beta + v2f[2].vtx_world * gamma;
+//			//						wrd = wrd.normalize();
+//			//					}
+//			//				}
+//			//			}
+//			//		}
+//			//		if (cnt2 > 0) {
+//			//			
+//			//			coord /= (float)cnt2;
+//			//			n /= (float)cnt2;
+//			//			texcoord /= (float)cnt2;
+//
+//			//			V2F param{
+//			//				wrd,
+//			//				coord,
+//			//				{0,0,0,0},
+//			//				{0,0,0,0},
+//			//				n.normalize(),
+//			//				texcoord,
+//			//				0,
+//			//				obj.get_tex(texcoord.u, texcoord.v)
+//			//			};
+//			//			Vec3f color = obj.pixel_shader(param);// *cnt / 4.0 + framebuffer[idx] * (1 - cnt / 4.0);
+//			//			set_pixel_unsafe(i, j, Math::vec_to_color(color));
+//			//		}
+//			//	}
+//			//}
+//		}
+//		
+//	}
+//}
 
 void Graphics::save_as_bmp_file(const char* filename)
 {

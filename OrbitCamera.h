@@ -88,12 +88,15 @@ public:
 	// »Ö¸´Ä¬ÈÏÎ»ÖÃ
 	void reset(void);  
 
+	Vec3f get_camera_position();
+	Vec3f get_camera_dir();
+
 private:
 	void update_phi_theta(float x, float y);
 	void update_target(float x, float y);
 	void update_zoom(Mouse& m);
 
-	Vec3f get_camera_position();
+	
 };
 
 #endif // !ORBIT_CAMERA_H

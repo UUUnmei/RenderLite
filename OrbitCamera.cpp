@@ -146,3 +146,8 @@ Vec3f OrbitCamera::get_camera_position()
 		target.z + x
 	);
 }
+
+Vec3f OrbitCamera::get_camera_dir()
+{
+	return target - get_camera_position();
+}

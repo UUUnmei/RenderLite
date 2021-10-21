@@ -10,7 +10,7 @@
 #include "Object.h"
 #include "GraphicsDiscriptor.h"
 #include "Keyboard.h"
-
+#include "SkyBox.h"
 
 class Graphics {
 
@@ -33,10 +33,13 @@ public:
 	//void DrawTriangle(float angle);
 	//void DrawCube(float angle, float x, float y);
 	void draw_object(Object& obj);
+	//void draw_sky(SkyBox& sky, Vec3f& eye_pos);
 
 	void save_as_bmp_file(const char* filename = "output.bmp");
 	void set_discriptor(GraphicsDiscriptor& d);
 	void update_by(Keyboard& k);
+
+	GraphicsDiscriptor disc;
 
 public: //2d
 	void line_DDA(int x0, int y0, int x1, int y1);
@@ -48,7 +51,7 @@ public: //2d
 	void lemniscate(int ox, int oy, int a);  // 同样，长轴在x轴上
 
 private:
-	GraphicsDiscriptor disc;
+	
 	Bitmap bmp_manager;
 
 	int width;

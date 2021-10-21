@@ -7,8 +7,10 @@
 
 // vertex to fragment
 struct V2F {
+	Vec3f vtx_model;
 	Vec3f vtx_view;
 	Vec4f vtx_mvp;  // 还需要视口变换
+	Vec4f vtx_wnd;
 	Vec3f normal;
 	Vec2f texcoord;
 	float rhw;		// vtx_mvp中w的倒数
