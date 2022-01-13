@@ -83,16 +83,21 @@ Vec3f pixel_shader_circle(const V2F& in) {
 	return Vec3f(frac, frac, frac);
 }
 
+Vec3f pixel_shader_normal(const V2F& in) {
+	Vec3f color = in.normal.normalize();
+	return color * 0.5f + 0.5f;
+}
+
 Vec4f vertex_shader_skybox(const Vertex& in, const ShadingContext& m, V2F& out) {
 	
-	out.vtx_mvp = m.mvp * in.vtx.to_vec4();
+	out.vtx_mvp = m.mvp * in.vtx.to_vec4(0);   //只保留旋转变换，不要位移，这样就可以使用单位立方体作为天空盒达到全屏的效果
 
-	out.vtx_view = (m.mv * in.vtx.to_vec4()).to_vec3();
+	out.vtx_view = (m.mv * in.vtx.to_vec4(0)).to_vec3();
 	out.normal = (m.it_mv * in.normal.to_vec4(0)).to_vec3();
 	out.texcoord = in.texcoord;
 
 	out.vtx_model = in.vtx;
-	out.vtx_mvp.z = -out.vtx_mvp.w; // 让最后的深度为0（最远）
+	out.vtx_mvp.z = out.vtx_mvp.w; // 让最后的深度最远
 	return out.vtx_mvp;
 }
 Vec3f pixel_shader_skybox(const V2F& in) {
@@ -125,22 +130,24 @@ void App::Initial()
 	//objects.back()->pixel_shader = pixel_shader_basic_blinn_phong;
 
 	//导入模型
-	Texture2D helmet_tex("obj/helmet_basecolor.bmp");
+	Texture2D helmet_tex("obj/helmet_basecolor256.bmp");
 	add_object("obj/helmet.obj", Transform3::rotate_x(Math::deg2rad(90)), helmet_tex);
-	add_object("obj/cube.obj", Transform3::translate(5.0f, 0.0f, 0.0f), helmet_tex);
+	Texture2D body_tex("obj/body_dif.png");
+	add_object("obj/nanosuit.obj", Transform3::translate(5.0f, 0.0f, 0.0f), body_tex);
 	add_object("obj/plane.obj", Transform3::translate(0.0f, -3.0f, 0.0f) *
 		Transform3::scale(10.0f, 10.f, 10.0f) *
 		Transform3::rotate_x(Math::deg2rad(-90)));
 	objects.back()->pixel_shader = pixel_shader_grid;
 
 
-	//sky.transform.set_model(Transform3::scale(30.0f, 30.0f, 30.0f));
-	//sky.transform.set_view(camera.get_view());
-	//sky.transform.set_projection(camera.get_persp());
-	//sky.transform.gen_mvp();
-	//sky.vertex_shader = vertex_shader_skybox;
-	//sky.pixel_shader = pixel_shader_skybox;
-	//sky.setup("D:\\Visual Studio\\RenderLite\\obj\\skybox");
+	//sky.transform.set_model(Transform3::scale(1.0f, 1.0f, 1.0f));
+	sky.transform.set_model(Transform3::scale(3.0f, 3.0f, 3.0f));
+	sky.transform.set_view(camera.get_view());
+	sky.transform.set_projection(camera.get_persp());
+	sky.transform.gen_mvp();
+	sky.vertex_shader = vertex_shader_skybox;
+	sky.pixel_shader = pixel_shader_skybox; // pixel_shader_normal;
+	sky.setup("D:\\Visual Studio\\RenderLite\\obj\\skybox");
 }
 
 int App::Go() {
@@ -189,7 +196,7 @@ void App::DoFrame()
 		wnd.Gfx().draw_object(*obj);
 
 	wnd.Gfx().disc.fc_mode = FaceCullMode::Front;
-	//wnd.Gfx().draw_object(sky);
+	wnd.Gfx().draw_object(sky);
 	wnd.Gfx().disc.fc_mode = FaceCullMode::Back;
 
 
@@ -220,6 +227,6 @@ void App::handle_kbd_mouse()
 	}
 
 
-	//sky.transform.view = camera.get_view();
-	//sky.transform.gen_mvp();
+	sky.transform.view = camera.get_view();
+	sky.transform.gen_mvp();
 }

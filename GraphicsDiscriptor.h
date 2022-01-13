@@ -16,7 +16,7 @@ enum class FaceCullMode {
 
 struct GraphicsDiscriptor {
 	RenderMode display = RenderMode::FilledTriangle;
-	bool MSAA4x = false;
+	bool MSAA4x = false;  // Ä¿Ç°ÆúÓÃ
 	FaceCullMode fc_mode = FaceCullMode::Back;
 };
 

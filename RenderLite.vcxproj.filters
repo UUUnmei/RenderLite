@@ -41,9 +41,6 @@
     <ClCompile Include="Graphics.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Model.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Object.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -60,9 +57,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Image.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="SkyBox.cpp">
@@ -121,9 +115,6 @@
     <ClInclude Include="bmp.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Object.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -149,9 +140,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Image.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="SkyBox.h">
@@ -184,5 +172,6 @@
     <None Include="Math\transform3.inl">
       <Filter>Math</Filter>
     </None>
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>

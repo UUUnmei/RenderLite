@@ -35,11 +35,10 @@ struct Transform3 {
 
 	//  投影变换
 	// 正交
-	// 两个z应为负数（如果是正的将转为负数，如果是负数就直接用）
 	static Mat4<float> orth(float left_x, float right_x, float top_y, float bottom_y, float near_z, float far_z);
 	// 透视
-	// 两个z应为负数（如果是正的将转为负数，如果是负数就直接用）
-	// 注意这个透视投影是完整的，不需要再乘个正交的
+	// 注意这个透视投影是完整的，不需要再乘个正交的 
+	// eq to glm::perspectiveRH_NO
 	static Mat4<float> persp(float fovY_rad, float ratio_wh, float near_z, float far_z);
 
 	// 视口变换

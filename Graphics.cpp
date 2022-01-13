@@ -81,13 +81,13 @@ void Graphics::clear_buffer(uint32_t color)
 			for (int j = 0; j < width; ++j) {
 				int idx = i * width + j;
 				for (int k = 0; k < 4; ++k)
-					depthbuffer[k + idx * 4] = 0;
+					depthbuffer[k + idx * 4] = 1.0f;
 			}
 	}
 	else {
 		for (int i = 0; i < height; ++i)
 			for (int j = 0; j < width; ++j)
-				depthbuffer[i * width + j] = 0; // -std::numeric_limits<float>::infinity();
+				depthbuffer[i * width + j] = 1.0f;
 	}
 				
 }
@@ -240,7 +240,6 @@ bool backface_culling(const Vec3f& v1, const Vec3f& v2, const Vec3f& v3) {
 	// 关于取负的新理解，在2d部分多边形裁剪中提到的，由于是在屏幕空间坐标进行的，而屏幕坐标y轴向下，导致叉乘变号
 }
 
-
 const std::vector<Vec4f> clip_planes{
 	{0,0,1,1}, //near
 	{0,0,-1,1}, //far
@@ -252,7 +251,7 @@ const std::vector<Vec4f> clip_planes{
 
 
 bool inside_test(const Vec4f& plane, const Vec4f& point) {
-	return plane.dot(point) < EPSILON;
+	return plane.dot(point) > -EPSILON;
 }
 
 V2F lerp_v2f(const V2F& p1, const V2F& p2, float t) {
@@ -353,9 +352,10 @@ void Graphics::draw_object(Object& obj)
 		// 现在为了配合齐次裁剪，只有完全不在的才剔除
 		// 脑补一下魔方，cvv是最里面那个立方体，这一步只会裁掉位于魔方顶点的8个位置，剩下 27 - 8 = 19个都留着
 		if (!check_cvv_clip_any(v2f[0].vtx_mvp) && !check_cvv_clip_any(v2f[1].vtx_mvp) && !check_cvv_clip_any(v2f[2].vtx_mvp))
-			continue;
+			continue;	
 
 		// 齐次裁剪 用mvp后的坐标
+		// 对于处理摄像机在模型内部的情况非常重要！
 		std::vector<V2F> cliped_vtx = homogeneous_clip(v2f[0], v2f[1], v2f[2]);
 		//std::vector<V2F> cliped_vtx = { v2f[0], v2f[1], v2f[2] };
 
@@ -364,12 +364,15 @@ void Graphics::draw_object(Object& obj)
 			x.vtx_wnd = x.vtx_mvp;
 			x.rhw = 1.0f / x.vtx_mvp.w;  // 为了插值进行预处理
 			auto& vv = x.vtx_wnd;
-			// 齐次化
+			//// 齐次化
 			vv = vv.homogenize();
+			//std::stringstream ss;
+			//ss << vv.x << ' ' << vv.y << ' ' << vv.z << ' ' << vv.w << '\n';
+			//OutputDebugString(ss.str().c_str());
 			// 视口变换
 			vv.x = (1.0f + vv.x) * width * 0.5f;
 			vv.y = (1.0f - vv.y) * height * 0.5f;
-			vv.z = (1.0f + vv.z) * 0.5f;
+			//vv.z = (1.0f + vv.z) * 0.5f;
 			
 		}
 
@@ -425,7 +428,7 @@ void Graphics::draw_object(Object& obj)
 							float inv = 1.0 / (alpha + beta + gamma);
 							alpha *= inv, beta *= inv, gamma *= inv;
 							//深度测试
-							if (Z >= depthbuffer[j * width + i]) {
+							if (Z <= depthbuffer[j * width + i]) {
 								depthbuffer[j * width + i] = Z;
 								// 法线插值
 								Vec3f n = vf1.normal * alpha + vf2.normal * beta + vf3.normal * gamma;

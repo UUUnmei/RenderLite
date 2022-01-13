@@ -1,4 +1,5 @@
 #include "predecl.h"
+#include "vec4.h"
 
 
 
@@ -12,6 +13,10 @@ inline Vec4<T> Vec4<T>::homogenize() const
 template<typename T>
 inline Vec4<T>::Vec4() noexcept
 	: x(T()), y(T()), z(T()), w(T()) { }
+
+template<typename T>
+inline Vec4<T>::Vec4(T x) noexcept
+	: Vec4(x, x, x, x) { }
 
 template<typename T>
 inline Vec4<T>::Vec4(T x, T y, T z, T w) noexcept

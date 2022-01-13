@@ -111,15 +111,16 @@ inline Mat4<float> Transform3::rotate(const Vec3<float>& axis, float rad)
 
 inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& dir, const Vec3<float>& up)
 {
-	//const Vec3<float> g = dir.normalize();
-	//const Vec3<float> t = up.normalize();
-	//const Vec3<float> a = g.cross(t).normalize();
+
+	//const Vec3f w = -dir.normalize();
+	//const Vec3f u = up.cross(w).normalize();
+	//const Vec3f v = w.cross(u);
 
 	//return
 	//	Mat4<float>(
-	//		a.x, a.y, a.z, 0,
-	//		t.x, t.y, t.z, 0,
-	//		-g.x, -g.y, -g.z, 0,
+	//		u.x, u.y, u.z, 0,
+	//		v.x, v.y, v.z, 0,
+	//		w.x, w.y, w.z, 0,
 	//		0, 0, 0, 1
 	//		)
 	//	* Mat4<float>(
@@ -129,15 +130,15 @@ inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& d
 	//		0, 0, 0, 1
 	//		);
 
-	const Vec3f w = -dir.normalize();
-	const Vec3f u = up.cross(w).normalize();
-	const Vec3f v = w.cross(u);
+	const Vec3f w = dir.normalize();
+	const Vec3f u = w.cross(up).normalize();
+	const Vec3f v = u.cross(w);
 
 	return
 		Mat4<float>(
 			u.x, u.y, u.z, 0,
 			v.x, v.y, v.z, 0,
-			w.x, w.y, w.z, 0,
+			-w.x, -w.y, -w.z, 0,
 			0, 0, 0, 1
 			)
 		* Mat4<float>(
@@ -146,14 +147,11 @@ inline Mat4<float> Transform3::view(const Vec3<float>& eye, const Vec3<float>& d
 			0, 0, 1, -eye.z,
 			0, 0, 0, 1
 			);
-
-		
+	
 }
 
 inline Mat4<float> Transform3::orth(float left_x, float right_x, float top_y, float bottom_y, float near_z, float far_z)
 {
-	near_z = near_z > 0 ? -near_z : near_z;
-	far_z = far_z > 0 ? -far_z : far_z;
 
 	float ixx = 1.0 / (right_x - left_x);
 	float iyy = 1.0 / (top_y - bottom_y);
@@ -161,19 +159,33 @@ inline Mat4<float> Transform3::orth(float left_x, float right_x, float top_y, fl
 	return Mat4<float>(
 		2 * ixx, 0, 0, -(right_x + left_x) * 1.0 * ixx,
 		0, 2 * iyy, 0, -(top_y + bottom_y) * 1.0 * iyy,
-		0, 0, 2 * izz, -(near_z + far_z) * 1.0 * izz,
+		0, 0, 2 * izz, (near_z + far_z) * 1.0 * izz,
 		0, 0, 0, 1
 		);
+
+	//near_z = near_z > 0 ? -near_z : near_z;
+	//far_z = far_z > 0 ? -far_z : far_z;
+
+	//float ixx = 1.0 / (right_x - left_x);
+	//float iyy = 1.0 / (top_y - bottom_y);
+	//float izz = 1.0 / (near_z - far_z);
+	//return Mat4<float>(
+	//	2 * ixx, 0, 0, -(right_x + left_x) * 1.0 * ixx,
+	//	0, 2 * iyy, 0, -(top_y + bottom_y) * 1.0 * iyy,
+	//	0, 0, 2 * izz, -(near_z + far_z) * 1.0 * izz,
+	//	0, 0, 0, 1
+	//	);
 }
 
 
 
 inline Mat4<float> Transform3::persp(float fovY_rad, float ratio_wh, float near_z, float far_z)
 {
+	// z > 0
 
-	float n = near_z > 0 ? -near_z : near_z;
-	float f = far_z > 0 ? -far_z : far_z;
-	float t = fabs(near_z) * std::tan(fovY_rad / 2.0);
+	float n = near_z;
+	float f = far_z;
+	float t = near_z * std::tan(fovY_rad / 2.0);
 	float b = -t;
 	float r = t * ratio_wh;
 	float l = -r;
@@ -181,9 +193,24 @@ inline Mat4<float> Transform3::persp(float fovY_rad, float ratio_wh, float near_
 	return Mat4<float>(
 		2 * n / (r - l), 0, (l + r) / (l - r), 0,
 		0, 2 * n / (t - b), (b + t) / (b - t), 0,
-		0, 0, (n + f) / (n - f), 2 * f * n / (f - n),
-		0, 0, 1, 0
+		0, 0, -(f + n) / (f - n), -2 * f * n / (f - n),
+		0, 0, -1, 0
 		);
+
+
+	//float n = near_z > 0 ? -near_z : near_z;
+	//float f = far_z > 0 ? -far_z : far_z;
+	//float t = fabs(near_z) * std::tan(fovY_rad / 2.0);
+	//float b = -t;
+	//float r = t * ratio_wh;
+	//float l = -r;
+
+	//return Mat4<float>(
+	//	2 * n / (r - l), 0, (l + r) / (l - r), 0,
+	//	0, 2 * n / (t - b), (b + t) / (b - t), 0,
+	//	0, 0, (n + f) / (n - f), 2 * f * n / (f - n),
+	//	0, 0, 1, 0
+	//	);
 }
 
 inline Mat4<float> Transform3::viewport(int width, int height)

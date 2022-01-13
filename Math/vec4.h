@@ -23,6 +23,7 @@ struct Vec4 {
 
 	// basic
 	Vec4() noexcept;
+	Vec4(T x) noexcept;
 	Vec4(T x, T y, T z, T w) noexcept;
 	Vec4(const Vec4<T>& t) noexcept;
 	Vec4<T>& operator=(const Vec4<T>& t) noexcept;

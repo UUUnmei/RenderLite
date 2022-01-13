@@ -165,8 +165,6 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Keyboard.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="OrbitCamera.cpp" />
@@ -193,8 +191,6 @@
     <ClInclude Include="Math\vec2.h" />
     <ClInclude Include="Math\vec3.h" />
     <ClInclude Include="Math\vec4.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Model.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="OrbitCamera.h" />
@@ -215,6 +211,7 @@
     <Image Include="favicon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="Math\mat4.inl" />
     <None Include="Math\transform3.inl" />
     <None Include="Math\vec2.inl" />
