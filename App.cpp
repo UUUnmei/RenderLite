@@ -140,8 +140,7 @@ void App::Initial()
 	objects.back()->pixel_shader = pixel_shader_grid;
 
 
-	//sky.transform.set_model(Transform3::scale(1.0f, 1.0f, 1.0f));
-	sky.transform.set_model(Transform3::scale(3.0f, 3.0f, 3.0f));
+	sky.transform.set_model(Transform3::scale(1.0f, 1.0f, 1.0f));
 	sky.transform.set_view(camera.get_view());
 	sky.transform.set_projection(camera.get_persp());
 	sky.transform.gen_mvp();

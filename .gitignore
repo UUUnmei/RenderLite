@@ -1,5 +1,15 @@
+
 /.vs
-/obj
 /x64
+
+/obj/*
+!/obj/cube.obj
+!/obj/plane.obj
+!/obj/helmet.obj
+!/obj/nanosuit.obj
+!/obj/skybox
+!/obj/helmet_basecolor256.bmp
+!/obj/body_dif.png
+
 
 *.mp4
